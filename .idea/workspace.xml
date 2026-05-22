@@ -1,14 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="7c84d3b5-263e-4db9-aa1f-cc7f16c05e1b" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/Training/Football_Training_YOLO.ipynb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/trackers/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/trackers/tracker.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/utils/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/utils/bbox_utils.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/utils/video_utils.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/SoccerVideoAnalysisDemo.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/SoccerVideoAnalysisDemo.iml" afterDir="false" />
+    <list default="true" id="7c84d3b5-263e-4db9-aa1f-cc7f16c05e1b" name="Changes" comment="Last minute addition of unversioned files">
+      <change afterPath="$PROJECT_DIR$/models/best.pt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/models/last.pt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/output_videos/output_video.avi" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/runs/detect/predict-2/Soccer_Test_Video.avi" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/runs/detect/predict-3/Soccer_Test_Video.avi" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/runs/detect/predict/Soccer_Test_Video.avi" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/runs/detect/track/Soccer_Test_Video.avi" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stubs/track_stubs.pkl" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -84,9 +85,23 @@
       <option name="presentableId" value="Default" />
       <updated>1779206656551</updated>
     </task>
+    <task id="LOCAL-00001" summary="Updated Program with basic player and ball tracking">
+      <option name="closed" value="true" />
+      <created>1779303619597</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1779303619597</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Updated Program with basic player and ball tracking" />
+    <MESSAGE value="Last minute addition of unversioned files" />
+    <option name="LAST_COMMIT_MESSAGE" value="Last minute addition of unversioned files" />
   </component>
 </project>
