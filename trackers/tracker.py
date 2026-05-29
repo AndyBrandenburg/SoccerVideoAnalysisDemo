@@ -3,6 +3,7 @@ import supervision as sv
 import pickle
 import os
 import numpy as np
+import pandas as pd
 import cv2
 import sys
 sys.path.append('../')
@@ -10,14 +11,40 @@ from utils import get_center_of_bbox, get_bbox_width
 class Tracker:
     def __init__(self, model_path):
         self.model = YOLO(model_path)
-        self.tracker = sv.ByteTrack()
+        self.tracker = sv.ByteTrack(
+            lost_track_buffer=90,
+            minimum_matching_threshold=0.5,
+            frame_rate=30
+        )
+        self.track_history = {}
+        self.last_ball_bbox = None
+        self.previous_ball_center = None
+
+    def interpolate_ball_positions(self, ball_positions):
+        ball_positions = [x.get(1, {}).get('bbox', [])for x in ball_positions]
+        df_ball_positions = pd.DataFrame(ball_positions, columns=['x1','y1','x2','y2'])
+
+        # Interpolate missing values
+        df_ball_positions = df_ball_positions.interpolate()
+        df_ball_positions = df_ball_positions.bfill()
+
+        ball_positions = [{1: {"bbox":x}}for x in df_ball_positions.to_numpy().tolist()]
+
+        return ball_positions
 
     def detect_frames(self, frames):
-        batch_size=20 #Caps the batch size so it doesn't overload the system
+        batch_size=16 #Caps the batch size so it doesn't overload the system
         detections = [] #initialize detections
-        for i in range(0, len(frames), batch_size): #Goes through frames and increments batch size
-            detections_batch = self.model.predict(frames[i:i+batch_size], conf=0.1)
+
+        for i in range(0, len(frames), batch_size):
+            detections_batch = self.model.predict(
+                frames[i:i + batch_size],
+                conf=0.15,
+                imgsz=1280,  # <-- IMPORTANT
+                verbose=False
+            )
             detections += detections_batch
+
         return detections
 
     def get_object_tracker(self, frames, read_from_stub=False, stub_path=None):
@@ -71,13 +98,61 @@ class Tracker:
                 if cls_id == cls_names_inv["referee"]:
                     tracks["referees"][frame_num][track_id] = {"bbox": bbox}
 
+            # Process ball detections
+            best_ball = None
+            best_conf = 0
+
             for frame_detection in detection_supervision:
                 bbox = frame_detection[0].tolist()
+                confidence = frame_detection[2]
                 cls_id = frame_detection[3]
 
                 if cls_id == cls_names_inv["ball"]:
-                    tracks["ball"][frame_num][1] = {"bbox": bbox}
 
+                    if confidence > best_conf:
+                        best_conf = confidence
+                        best_ball = bbox
+
+            # Reject impossible jumps
+            if best_ball is not None:
+
+                x_center = (
+                                   best_ball[0] +
+                                   best_ball[2]
+                           ) / 2
+
+                y_center = (
+                                   best_ball[1] +
+                                   best_ball[3]
+                           ) / 2
+
+                if self.previous_ball_center is not None:
+
+                    prev_x, prev_y = (
+                        self.previous_ball_center
+                    )
+
+                    distance = np.sqrt(
+                        (x_center - prev_x) ** 2 +
+                        (y_center - prev_y) ** 2
+                    )
+
+                    # Reject crazy movement
+                    if distance > 200:
+                        best_ball = None
+
+                # Update previous location
+                if best_ball is not None:
+                    self.previous_ball_center = (
+                        x_center,
+                        y_center
+                    )
+
+            # Save ball
+            if best_ball is not None:
+                tracks["ball"][frame_num][1] = {
+                    "bbox": best_ball
+                }
         if stub_path is not None:
             with open(stub_path, 'wb') as f:
                 pickle.dump(tracks, f)
@@ -146,8 +221,108 @@ class Tracker:
         cv2.drawContours(frame, [triangle_points], 0, color, cv2.FILLED)
         cv2.drawContours(frame, [triangle_points], 0, (0,0,0), 2)
         return frame
+    # --- NEW ---
+    def draw_team_ball_control(self, frame, frame_num, team_ball_control):
+        # Draw a semi transparent rectangle
+        overlay = frame.copy()
+        height, width = frame.shape[:2]
 
-    def draw_annotations(self, video_frames, tracks):
+        x1 = int(width * 0.70)
+        y1 = int(height * 0.85)
+
+        x2 = int(width * 0.98)
+        y2 = int(height * 0.98)
+
+        cv2.rectangle(
+            overlay,
+            (x1, y1),
+            (x2, y2),
+            (255, 255, 255),
+            -1
+        )
+        alpha = 0.4
+        cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
+
+        team_ball_control_till_frame = team_ball_control[: frame_num + 1]
+        # Count possession frames
+        team_1_num_frames = (
+            team_ball_control_till_frame[
+                team_ball_control_till_frame == 1
+                ].shape[0]
+        )
+
+        team_2_num_frames = (
+            team_ball_control_till_frame[
+                team_ball_control_till_frame == 2
+                ].shape[0]
+        )
+
+        total_frames = (
+                team_1_num_frames +
+                team_2_num_frames
+        )
+
+        # Avoid division by zero
+        if total_frames > 0:
+            team_1 = (
+                    team_1_num_frames /
+                    total_frames
+            )
+
+            team_2 = (
+                    team_2_num_frames /
+                    total_frames
+            )
+        else:
+            team_1 = 0
+            team_2 = 0
+
+        # Write the statistics into the rectangle
+        # Team 1
+        cv2.putText(
+            frame,
+            f"Team 1 Ball Control: {team_1 * 100:.2f}%",
+            (x1 + 20, y1 + 50),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            1,
+            (0, 0, 0),
+            3
+        )
+        # Team 2
+        cv2.putText(
+            frame,
+            f"Team 2 Ball Control: {team_2 * 100:.2f}%",
+            (x1 + 20, y1 + 90),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            1,
+            (0, 0, 0),
+            3
+        )
+
+        return frame
+
+    # Implements smoothing on the bounding boxes to make them appear better
+    def smooth_bbox(self, track_id, bbox, alpha = 0.7):
+
+        if track_id not in self.track_history:
+            self.track_history[track_id] = bbox
+            return bbox
+
+        prev_bbox = self.track_history[track_id]
+
+        smoothed_bbox = [
+            alpha * bbox[0] + (1 - alpha) * prev_bbox[0],
+            alpha * bbox[1] + (1 - alpha) * prev_bbox[1],
+            alpha * bbox[2] + (1 - alpha) * prev_bbox[2],
+            alpha * bbox[3] + (1 - alpha) * prev_bbox[3],
+        ]
+
+        self.track_history[track_id] = smoothed_bbox
+
+        return smoothed_bbox
+
+
+    def draw_annotations(self, video_frames, tracks, team_ball_control):
         output_video_frames= []
         for frame_num, frame in enumerate(video_frames):
             frame = frame.copy()
@@ -158,18 +333,60 @@ class Tracker:
 
             #Draw Players
             for track_id, player in player_dict.items():
-                #Draws the circles under the players in red
-                frame = self.draw_ellipse(frame, player["bbox"], (0,0,255), track_id, draw_id = True)
+                #Draws the circles under the players in the color of their respective team, if not team color is found, use red
+                # Smooth bbox
+                bbox = self.smooth_bbox(
+                    f"player_{track_id}",
+                    player["bbox"]
+                )
+
+                # Draw team-colored circle
+                color = player.get(
+                    "team_color",
+                    (0, 0, 255)
+                )
+
+                frame = self.draw_ellipse(
+                    frame,
+                    bbox,
+                    color,
+                    track_id,
+                    draw_id=True
+                )
+                if player.get('has_ball', False):
+                    frame = self.draw_triangle(frame, player["bbox"], (0, 0, 255))
+
 
             # Draw Referees
             for track_id, referee in referee_dict.items():
+
+                bbox = self.smooth_bbox(
+                    f"ref_{track_id}",
+                    referee["bbox"]
+                )
                 # Draws the circles under the referees in yellow
-                frame = self.draw_ellipse(frame, referee["bbox"], (0, 255, 255), track_id, draw_id = False)
+                frame = self.draw_ellipse(
+                    frame,
+                    bbox,
+                    (0, 255, 255),
+                    track_id,
+                    draw_id=False
+                )
 
             # Draw Ball
             for track_id, ball in ball_dict.items():
-                frame = self.draw_triangle(frame, ball["bbox"], (0, 255, 0))
+                bbox = ball["bbox"]
+                self.last_ball_bbox = bbox
 
+            if self.last_ball_bbox is not None:
+                frame = self.draw_triangle(
+                    frame,
+                    self.last_ball_bbox,
+                    (0, 255, 0)
+                )
+
+            #Draw team bal control
+            frame = self.draw_team_ball_control(frame, frame_num, team_ball_control)
             output_video_frames.append(frame)
 
         return output_video_frames
