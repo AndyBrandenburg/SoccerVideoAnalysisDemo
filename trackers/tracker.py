@@ -1,24 +1,67 @@
 from ultralytics import YOLO
 import supervision as sv
+print(sv.__version__)
 import pickle
 import os
+import json
 import numpy as np
 import pandas as pd
 import cv2
 import sys
 sys.path.append('../')
+import inspect
+import traceback
+from itertools import combinations
 from utils import get_center_of_bbox, get_bbox_width
+
+# Tracker
+def json_converter(obj):
+    if isinstance(obj, np.integer):
+        return int(obj)
+
+    if isinstance(obj, np.floating):
+        return float(obj)
+
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()
+
+    raise TypeError(
+        f"Object of type {type(obj)} "
+        f"is not JSON serializable"
+    )
+
 class Tracker:
     def __init__(self, model_path):
         self.model = YOLO(model_path)
+        print("Loaded model:", model_path)
+        print("Model names:", self.model.names)
+        print("TRACKER CREATED")
+        print(inspect.signature(sv.ByteTrack))
         self.tracker = sv.ByteTrack(
-            lost_track_buffer=90,
-            minimum_matching_threshold=0.5,
-            frame_rate=30
+            # lost_track_buffer=300,
+            # minimum_matching_threshold=0.2,
+            # frame_rate=30
         )
+        print("TRACKER INSTANCE:", id(self))
+        print("track_activation_threshold =", self.tracker.track_activation_threshold)
+        print("minimum_matching_threshold =", self.tracker.minimum_matching_threshold)
+        print("minimum_consecutive_frames =", self.tracker.minimum_consecutive_frames)
+        print("det_thresh =", self.tracker.det_thresh)
+        print("max_time_lost =", self.tracker.max_time_lost)
+
+        print(type(self.tracker))
+        print(dir(self.tracker))
         self.track_history = {}
+        self.pretrack_history = {}
         self.last_ball_bbox = None
         self.previous_ball_center = None
+        self.smoothed_ball = None
+        self.ball_alpha = 0.7
+        self.previous_ids = set()
+
+    def frame_blur_score(self, frame):
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        return cv2.Laplacian(gray, cv2.CV_64F).var()
 
     def interpolate_ball_positions(self, ball_positions):
         ball_positions = [x.get(1, {}).get('bbox', [])for x in ball_positions]
@@ -37,24 +80,77 @@ class Tracker:
         detections = [] #initialize detections
 
         for i in range(0, len(frames), batch_size):
-            detections_batch = self.model.predict(
-                frames[i:i + batch_size],
-                conf=0.15,
-                imgsz=1280,  # <-- IMPORTANT
-                verbose=False
-            )
-            detections += detections_batch
+            print(f"Batch starting at frame {i}")
+            batch = frames[i:i + batch_size]
+
+            batch_detections = []
+
+            for frame in batch:
+                blur = self.frame_blur_score(frame)
+
+                conf = 0.22 if blur < 200 else 0.25
+
+                result = self.model.predict(
+                    frame,
+                    conf=conf,
+                    iou=0.35,
+                    imgsz=1280,
+                    verbose=False
+                )
+
+                # results = self.model.track(
+                #     frame,
+                #     persist=True,
+                #     tracker="bytetrack.yaml"
+                # )
+
+                batch_detections.append(result[0])
+
+
+            detections += batch_detections
 
         return detections
 
+    def smooth_bbox(self, key, bbox, alpha=0.6):
+
+        if key not in self.pretrack_history:
+            self.pretrack_history[key] = bbox
+            return bbox
+
+        prev = self.pretrack_history[key]
+
+        smoothed = [
+            alpha * bbox[0] + (1 - alpha) * prev[0],
+            alpha * bbox[1] + (1 - alpha) * prev[1],
+            alpha * bbox[2] + (1 - alpha) * prev[2],
+            alpha * bbox[3] + (1 - alpha) * prev[3],
+        ]
+
+        self.pretrack_history[key] = smoothed
+        return smoothed
+
     def get_object_tracker(self, frames, read_from_stub=False, stub_path=None):
+        print("TRACKER INSTANCE IN METHOD:", id(self))
+        print(__file__)
+        print("RUNNING TRACKER VERSION JUNE-9-TEST")
+        tracking_export = []
+
+        print("read_from_stub =", read_from_stub)
+        print("stub exists =", os.path.exists(stub_path) if stub_path else False)
 
         if read_from_stub and stub_path is not None and os.path.exists(stub_path):
+            print(">>> LOADING FROM STUB")
             with open(stub_path, 'rb') as f:
                 tracks = pickle.load(f)
+            print(">>> LOADED STUB")
             return tracks
 
+        print(">>> STARTING DETECTION")
+
         detections = self.detect_frames(frames)
+
+        print(">>> DETECTION COMPLETE")
+        print("NUM DETECTIONS:", len(detections))
 
         tracks = {
             "players":[],
@@ -64,39 +160,221 @@ class Tracker:
 
         #loops over frames one by one
         for frame_num, detection in enumerate(detections):
-            cls_names = detection.names
-            cls_names_inv = {v:k for k,v in cls_names.items()}
-            print(cls_names)
+            try:
+                print("FRAME:", frame_num)
+                # print("Tracker instance:", id(self.tracker))
 
-            #Convert to supervision detection format
-            detection_supervision = sv.Detections.from_ultralytics(detection)
+                cls_names = detection.names
+                # print(detection.names)
+                cls_names_inv = {v: k for k, v in cls_names.items()}
 
-            #Convert Goalkeeper to Player object
-            player_id = cls_names_inv.get("player")
+                # Convert to supervision detection format
+                detection_supervision = sv.Detections.from_ultralytics(detection)
 
-            for object_ind, class_id in enumerate(detection_supervision.class_id):
-                if cls_names[class_id] == "goalkeeper" and player_id is not None:
-                    detection_supervision.class_id[object_ind] = player_id
+                #Separate the ball from players and referees before tracking
+                tracking_mask = (
+                        (detection_supervision.class_id == cls_names_inv["player"]) |
+                        (detection_supervision.class_id == cls_names_inv["goalkeeper"]) |
+                        (detection_supervision.class_id == cls_names_inv["referee"])
+                )
 
-            #Track Objects
-            detection_with_tracks = self.tracker.update_with_detections(detection_supervision)
+                tracking_detections = detection_supervision[tracking_mask]
+                # print("Detections before tracking:", len(detection_supervision))
+                # print(
+                #     "tracking boxes:",
+                #     tracking_detections.xyxy[:5]
+                # )
+                print(
+                    f"Frame {frame_num}: "
+                    f"Player detections = {len(tracking_detections)}"
+                )
+
+                # Track Objects
+                print("BEFORE TRACKER")
+                # print("Before tracker:", len(tracking_detections))
+                if frame_num in [745, 746]:
+                    centers = []
+
+                    for box in tracking_detections.xyxy:
+                        cx = (box[0] + box[2]) / 2
+                        cy = (box[1] + box[3]) / 2
+                        centers.append((round(float(cx), 1), round(float(cy), 1)))
+
+
+                    # print(f"Frame {frame_num} centers:")
+                    # print(centers)
+                    # current_ids = set(int(det[4]) for det in detection_with_tracks)
+                    #
+                    # print(f"Frame {frame_num} IDs:")
+                    # print(current_ids)
+                    # print(detection_with_tracks[0])
+                    # print(type(detection_with_tracks))
+                    # surviving = current_ids.intersection(self.previous_ids)
+
+                    # print("Previous IDs:", sorted(self.previous_ids))
+                    # print("Current IDs:", sorted(current_ids))
+                    # print("Surviving IDs:", sorted(surviving))
+                boxes = tracking_detections.xyxy
+
+                duplicates = 0
+                #Debugging Code
+                for i, j in combinations(range(len(boxes)), 2):
+                    box1 = boxes[i]
+                    box2 = boxes[j]
+
+                    x1 = max(box1[0], box2[0])
+                    y1 = max(box1[1], box2[1])
+                    x2 = min(box1[2], box2[2])
+                    y2 = min(box1[3], box2[3])
+
+                    inter = max(0, x2 - x1) * max(0, y2 - y1)
+
+                    area1 = (box1[2] - box1[0]) * (box1[3] - box1[1])
+                    area2 = (box2[2] - box2[0]) * (box2[3] - box2[1])
+
+                    union = area1 + area2 - inter
+
+                    iou = inter / union if union > 0 else 0
+
+                    if iou > 0.5:
+                        duplicates += 1
+
+
+                # print("Duplicate pairs:", duplicates)
+                detection_with_tracks = self.tracker.update_with_detections(tracking_detections)
+                print("=== TRACKER OUTPUT STRUCTURE DEBUG ===")
+                d = detection_with_tracks[0]
+                for i, v in enumerate(d):
+                    print(i, v)
+                print("======================================")
+                if frame_num == 0:
+                    print("TRACKER SAMPLE OUTPUT:", detection_with_tracks[0])
+                    print("RAW SAMPLE:", detection_with_tracks[:3])
+                    for i in range(min(3, len(detection_with_tracks))):
+                        print(detection_with_tracks[i])
+
+                print(
+                    "TRACKER STATE:",
+                    "tracked =", len(self.tracker.tracked_tracks),
+                    "lost =", len(self.tracker.lost_tracks),
+                    "removed =", len(self.tracker.removed_tracks)
+                )
+                print("TRACKER OBJECT ID:", id(self.tracker))
+
+                print("AFTER TRACKER")
+                print("TYPE:", type(detection_with_tracks[0]))
+                print("SAMPLE:", detection_with_tracks[0])
+                # print("After tracker:", len(detection_with_tracks))
+                # print("Tracker IDs:", detection_with_tracks.tracker_id)
+                # print("Tracker frame_id:", self.tracker.frame_id)
+
+                current_ids = set()
+
+                for det in detection_with_tracks:
+                    track_id = int(det[4])
+                    current_ids.add(track_id)
+
+                surviving = current_ids.intersection(self.previous_ids)
+
+                print(
+                    "Frame", frame_num,
+                    "Min ID:", min(current_ids),
+                    "Max ID:", max(current_ids)
+                )
+                if frame_num in [745, 746]:
+                    print("Tracker IDs:")
+                    print(sorted(current_ids))
+
+                print(
+                    f"Frame {frame_num}: "
+                    f"{len(surviving)} IDs survived"
+                )
+
+                self.previous_ids = current_ids
+
+
+            except Exception as e:
+                print("ERROR AT FRAME:", frame_num)
+                traceback.print_exc()
+                break
+
+
 
             #Uses a dictionary format
             tracks["players"].append({})
             tracks["referees"].append({})
             tracks["ball"].append({})
 
+            #Debugging Code:
+            if frame_num < 5:
+                print(
+                    f"Frame {frame_num}: "
+                    f"{len(tracks['players'][frame_num])} players saved"
+                )
+
+            frame_data = {
+                "frame": frame_num,
+                "players": [],
+                "referees": [],
+                "ball": None
+            }
+
+            # for det in detection_supervision:
+            #     if det[3] == cls_names_inv["player"]:
+            #         print(float(det[2]))
+
             #loop over detections with the players and referees
-            for frame_detection in detection_with_tracks:
-                bbox = frame_detection[0].tolist()
-                cls_id = frame_detection[3]
-                track_id = frame_detection[4]
+            seen_track_ids = set()
+            for det in detection_with_tracks:
+                bbox = det[0].tolist()  # already a (x1,y1,x2,y2) array
+                cls_id = int(det[3])
+                track_id = int(det[4])
 
+                if track_id in seen_track_ids:
+                    continue
+                seen_track_ids.add(track_id)
+
+                #Debugging code
+                # print(
+                #     "Track:",
+                #     track_id,
+                #     "Class:",
+                #     cls_id,
+                #     "Name:",
+                #     cls_names[cls_id]
+                # )
+                #ID Change Diagnostic (debugging)
+                # if cls_id == cls_names_inv["player"]:
+                #     print(
+                #         f"Frame {frame_num}: "
+                #         f"Track {track_id} "
+                #         f"BBox {bbox}"
+                #     )
+
+                # Saves Players
                 if cls_id == cls_names_inv["player"]:
-                    tracks["players"][frame_num][track_id] = {"bbox":bbox}
+                    # if frame_num in [745, 746]:
+                    #     print(
+                    #         f"SAVING PLAYER "
+                    #         f"{track_id}"
+                    #     )
+                    tracks["players"][frame_num][track_id] = {"bbox": bbox}
 
-                if cls_id == cls_names_inv["referee"]:
+                    frame_data["players"].append({
+                        "track_id": track_id,
+                        "bbox": bbox
+                    })
+
+                # Saves Referees
+                elif cls_id == cls_names_inv["referee"]:
                     tracks["referees"][frame_num][track_id] = {"bbox": bbox}
+
+                    frame_data["referees"].append({
+                        "track_id": track_id,
+                        "bbox": bbox
+                    })
+            print("Detections after tracking:", len(detection_with_tracks))
+
 
             # Process ball detections
             best_ball = None
@@ -150,12 +428,43 @@ class Tracker:
 
             # Save ball
             if best_ball is not None:
-                tracks["ball"][frame_num][1] = {
+                tracks["ball"][frame_num][1] = {"bbox": best_ball}
+
+                frame_data["ball"] = {
                     "bbox": best_ball
                 }
+            # Populate frame data
+            tracking_export.append(frame_data)
+
+
+
+
+        print("EXPORT LENGTH:", len(tracking_export))
         if stub_path is not None:
             with open(stub_path, 'wb') as f:
                 pickle.dump(tracks, f)
+        #Debugging code to see if JSON file is being written
+        print(">>> ABOUT TO WRITE JSON")
+
+        output_path = os.path.join(
+            os.getcwd(),
+            "JSON_data",
+            "tracking_output.json"
+        )
+
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+        print("Saving JSON to:", output_path)
+
+        with open(output_path, "w") as f:
+            json.dump(
+                tracking_export,
+                f,
+                indent=4,
+                default=json_converter
+            )
+
+        print("JSON WRITE COMPLETE")
         return tracks
 
     def draw_ellipse(self, frame, bbox, color, track_id = None, draw_id = True):
@@ -302,24 +611,25 @@ class Tracker:
         return frame
 
     # Implements smoothing on the bounding boxes to make them appear better
-    def smooth_bbox(self, track_id, bbox, alpha = 0.7):
+    # def smooth_bbox(self, track_id, bbox, alpha = 0.2):
+    #
+    #     if track_id not in self.track_history:
+    #         self.track_history[track_id] = bbox
+    #         return bbox
+    #
+    #     prev_bbox = self.track_history[track_id]
+    #
+    #     smoothed_bbox = [
+    #         alpha * bbox[0] + (1 - alpha) * prev_bbox[0],
+    #         alpha * bbox[1] + (1 - alpha) * prev_bbox[1],
+    #         alpha * bbox[2] + (1 - alpha) * prev_bbox[2],
+    #         alpha * bbox[3] + (1 - alpha) * prev_bbox[3],
+    #     ]
+    #
+    #     self.track_history[track_id] = smoothed_bbox
+    #
+    #     return smoothed_bbox
 
-        if track_id not in self.track_history:
-            self.track_history[track_id] = bbox
-            return bbox
-
-        prev_bbox = self.track_history[track_id]
-
-        smoothed_bbox = [
-            alpha * bbox[0] + (1 - alpha) * prev_bbox[0],
-            alpha * bbox[1] + (1 - alpha) * prev_bbox[1],
-            alpha * bbox[2] + (1 - alpha) * prev_bbox[2],
-            alpha * bbox[3] + (1 - alpha) * prev_bbox[3],
-        ]
-
-        self.track_history[track_id] = smoothed_bbox
-
-        return smoothed_bbox
 
 
     def draw_annotations(self, video_frames, tracks, team_ball_control):
@@ -354,7 +664,10 @@ class Tracker:
                     draw_id=True
                 )
                 if player.get('has_ball', False):
-                    frame = self.draw_triangle(frame, player["bbox"], (0, 0, 255))
+                    frame = self.draw_triangle(frame, bbox, (0, 0, 255))
+
+                # print(player)
+
 
 
             # Draw Referees
@@ -385,9 +698,32 @@ class Tracker:
                     (0, 255, 0)
                 )
 
-            #Draw team bal control
+
+            #Draw team ball control
             frame = self.draw_team_ball_control(frame, frame_num, team_ball_control)
             output_video_frames.append(frame)
+
+            #Debugging Code
+            # current_ids = set(player_dict.keys())
+            #
+            # new_ids = current_ids - self.previous_ids
+            #
+            # if len(new_ids) > 0:
+            #     print(f"Frame {frame_num}: New IDs {new_ids}")
+            #
+            # self.previous_ids = current_ids
+
+            # if not hasattr(self, "all_player_ids"):
+            #     self.all_player_ids = set()
+            #
+            # for track_id in player_dict.keys():
+            #     self.all_player_ids.add(track_id)
+
+            # print(
+            #     f"Frame {frame_num}: "
+            #     f"Players={len(player_dict)} "
+            #     f"Unique IDs Seen={len(self.all_player_ids)}"
+            # )
 
         return output_video_frames
 
