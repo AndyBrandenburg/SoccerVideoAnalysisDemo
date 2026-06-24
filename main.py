@@ -6,6 +6,13 @@ import numpy as np
 from team_assigner import TeamAssigner
 from sklearn.cluster import KMeans
 from player_ball_assigner import PlayerBallAssigner
+from utils.tracking_data import  load_tracking_data
+from analytics.player_histories import build_player_histories
+from camera_motion.camera_motion import CameraMotionEstimator
+from database.sql_lite import SQLiteManager
+from database.sql_server import SQLServerManager
+from analytics.heatmaps import  HeatmapMaker
+
 # Main
 def collect_player_colors(
         tracks,
@@ -65,6 +72,107 @@ def main():
 
     print("Players in frame 0:", len(tracks["players"][0]))
     print("STEP 4 - tracking complete")
+
+    #Implement SQL Lite database:
+    # Create database (SQL Lite)
+    sqlite_db = SQLiteManager()
+
+    # Create database (SQL Server)
+    sqlserver_db = SQLServerManager()
+
+    # Create tables
+    sqlite_db.create_tables()
+
+    #Insert Players
+    databases = [
+        sqlite_db,
+        sqlserver_db
+    ]
+
+    for frame_num, player_dict in enumerate(tracks["players"]):
+
+        for track_id, player in player_dict.items():
+
+            for db in databases:
+                db.insert_player(
+                    frame_num,
+                    track_id,
+                    player["bbox"]
+                )
+
+    #Insert Ball
+    databases = [
+        sqlite_db,
+        sqlserver_db
+    ]
+
+    for frame_num, ball_dict in enumerate(tracks["ball"]):
+
+        if 1 in ball_dict:
+
+            for db in databases:
+                db.insert_ball(
+                    frame_num,
+                    ball_dict[1]["bbox"]
+                )
+    sqlite_db.save()
+    sqlserver_db.save()
+
+    sqlite_db.close()
+    sqlserver_db.close()
+
+    #JSON Implementation
+    tracking_data = load_tracking_data(
+        "JSON_data/tracking_output.json"
+    )
+
+    print("Frames in JSON:", len(tracking_data))
+    print(tracking_data[0])
+
+    player_histories = build_player_histories(
+        tracking_data
+    )
+    print(
+        "Tracked players:",
+        len(player_histories)
+    )
+
+
+    print(
+        "Player 1 samples:",
+        player_histories[1][:5]
+    )
+
+    #Uses the code in heatmaps/HeatmapMaker to build the player heatmap
+    heatmap_maker = HeatmapMaker()
+
+    heatmap_width = video_frames[0].shape[1]
+    heatmap_height = video_frames[0].shape[0]
+    #Debugging code
+    for item in player_histories[1][:5]:
+        print("-----------------PLAYER_HISTORIES_ITEM----------------------")
+        print(item)
+
+    player_heatmap = heatmap_maker.build_player_heatmap(
+        player_histories[1],
+        heatmap_width,
+        heatmap_height
+    )
+    team_heatmap = heatmap_maker.build_team_heatmap(
+        player_histories,
+        1920,
+        1080
+    )
+
+    heatmap_maker.save_heatmap(
+        team_heatmap,
+        "output_heatmaps/team_heatmap.png"
+    )
+
+    heatmap_maker.save_heatmap(
+        player_heatmap,
+        "output_heatmaps/player1_heatmap.png"
+    )
 
     # Interpolate ball positions
     print("BALL FRAME 0:", tracks["ball"][0])
@@ -178,7 +286,7 @@ def main():
     #Save Video
     save_video(
         output_video_frames,
-        'output_videos/output_video_test_difftracker.avi',
+        'output_videos/output_video_test_trails.avi',
         fps
     )
 

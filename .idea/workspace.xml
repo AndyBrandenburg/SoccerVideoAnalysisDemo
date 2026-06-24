@@ -2,10 +2,27 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="7c84d3b5-263e-4db9-aa1f-cc7f16c05e1b" name="Changes" comment="Fixed tracker instability">
+      <change afterPath="$PROJECT_DIR$/Video_Input/Basketball_Test_Video.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Video_Input/Soccer_Test_Video2.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Video_Input/Soccer_Test_Video3.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Video_Input/Soccer_Test_Video4.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Video_Input/Soccer_Test_Video5.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Video_Input/Soccer_Test_Video6.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Video_Input/Soccer_Video1.MP4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Video_Input/Soccer_Video2.MP4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/analytics/heatmaps.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/analytics/player_histories.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/camera_motion/camera_motion.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/database/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/database/sql_lite.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/database/sql_server.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/runs/detect/predict-2/Soccer_Test_Video.avi" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/runs/detect/predict-3/Soccer_Test_Video.avi" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/runs/detect/predict/Soccer_Test_Video.avi" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/runs/detect/track/Soccer_Test_Video.avi" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/utils/tracking_data.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/player_ball_assigner/player_ball_assigner.py" beforeDir="false" afterPath="$PROJECT_DIR$/player_ball_assigner/player_ball_assigner.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/team_assigner/team_assigner.py" beforeDir="false" afterPath="$PROJECT_DIR$/team_assigner/team_assigner.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/trackers/tracker.py" beforeDir="false" afterPath="$PROJECT_DIR$/trackers/tracker.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -45,26 +62,32 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;Python.main.executor&quot;: &quot;Run&quot;,
-    &quot;Python.tracker.executor&quot;: &quot;Run&quot;,
-    &quot;Python.video_utils.executor&quot;: &quot;Run&quot;,
-    &quot;Python.yolo_inference.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
-    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/andre/PycharmProjects/SoccerVideoAnalysisDemo&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "Python.main.executor": "Run",
+    "Python.sql_lite.executor": "Run",
+    "Python.sql_server.executor": "Run",
+    "Python.test.executor": "Run",
+    "Python.tracker.executor": "Run",
+    "Python.video_utils.executor": "Run",
+    "Python.yolo_inference.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "git-widget-placeholder": "master",
+    "last_opened_file_path": "C:/Users/andre/PycharmProjects/SoccerVideoAnalysisDemo",
+    "nodejs_package_manager_path": "npm"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\andre\PycharmProjects\SoccerVideoAnalysisDemo" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\andre\PycharmProjects\SoccerVideoAnalysisDemo\sports_db" />
     </key>
   </component>
   <component name="SharedIndexes">
@@ -114,7 +137,15 @@
       <option name="project" value="LOCAL" />
       <updated>1781279063174</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="Fixed tracker instability">
+      <option name="closed" value="true" />
+      <created>1781280546198</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1781280546198</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

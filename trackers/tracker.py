@@ -13,6 +13,7 @@ import inspect
 import traceback
 from itertools import combinations
 from utils import get_center_of_bbox, get_bbox_width
+from camera_motion.camera_motion import CameraMotionEstimator
 
 # Tracker
 def json_converter(obj):
@@ -58,20 +59,43 @@ class Tracker:
         self.smoothed_ball = None
         self.ball_alpha = 0.7
         self.previous_ids = set()
+        self.motion_estimator = CameraMotionEstimator()
+
 
     def frame_blur_score(self, frame):
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         return cv2.Laplacian(gray, cv2.CV_64F).var()
 
     def interpolate_ball_positions(self, ball_positions):
-        ball_positions = [x.get(1, {}).get('bbox', [])for x in ball_positions]
-        df_ball_positions = pd.DataFrame(ball_positions, columns=['x1','y1','x2','y2'])
+
+        extracted = []
+
+        for x in ball_positions:
+            bbox = x.get(1, {}).get("bbox", None)
+
+            if bbox is None or len(bbox) != 4:
+                extracted.append([np.nan, np.nan, np.nan, np.nan])
+            else:
+                extracted.append(bbox)
+
+        # No ball detections anywhere in the video
+        if all(np.isnan(row).all() for row in extracted):
+            print("No ball detections found in video")
+            return ball_positions
+
+        df_ball_positions = pd.DataFrame(
+            extracted,
+            columns=["x1", "y1", "x2", "y2"]
+        )
 
         # Interpolate missing values
         df_ball_positions = df_ball_positions.interpolate()
         df_ball_positions = df_ball_positions.bfill()
 
-        ball_positions = [{1: {"bbox":x}}for x in df_ball_positions.to_numpy().tolist()]
+        ball_positions = [
+            {1: {"bbox": x}}
+            for x in df_ball_positions.to_numpy().tolist()
+        ]
 
         return ball_positions
 
@@ -276,14 +300,19 @@ class Tracker:
 
                 surviving = current_ids.intersection(self.previous_ids)
 
-                print(
-                    "Frame", frame_num,
-                    "Min ID:", min(current_ids),
-                    "Max ID:", max(current_ids)
-                )
-                if frame_num in [745, 746]:
-                    print("Tracker IDs:")
-                    print(sorted(current_ids))
+                if current_ids:
+                    print(
+                        f"Frame {frame_num}",
+                        "Min ID:", min(current_ids),
+                        "Max ID:", max(current_ids)
+                    )
+                else:
+                    print(
+                        f"Frame {frame_num}: No active tracks"
+                    )
+                # if frame_num in [745, 746]:
+                #     print("Tracker IDs:")
+                #     print(sorted(current_ids))
 
                 print(
                     f"Frame {frame_num}: "
@@ -610,32 +639,60 @@ class Tracker:
 
         return frame
 
-    # Implements smoothing on the bounding boxes to make them appear better
-    # def smooth_bbox(self, track_id, bbox, alpha = 0.2):
-    #
-    #     if track_id not in self.track_history:
-    #         self.track_history[track_id] = bbox
-    #         return bbox
-    #
-    #     prev_bbox = self.track_history[track_id]
-    #
-    #     smoothed_bbox = [
-    #         alpha * bbox[0] + (1 - alpha) * prev_bbox[0],
-    #         alpha * bbox[1] + (1 - alpha) * prev_bbox[1],
-    #         alpha * bbox[2] + (1 - alpha) * prev_bbox[2],
-    #         alpha * bbox[3] + (1 - alpha) * prev_bbox[3],
-    #     ]
-    #
-    #     self.track_history[track_id] = smoothed_bbox
-    #
-    #     return smoothed_bbox
 
+    def draw_trajectory(
+            self,
+            frame,
+            track_id,
+            bbox,
+            color=(0, 255, 255),
+            history_length=50,
+            offset_x=0,
+            offset_y=0
+    ):
+        # Bottom-center of bbox
+        x = int((bbox[0] + bbox[2]) / 2)
+        y = int(bbox[3])
+
+        world_x = x - offset_x
+        world_y = y - offset_y
+
+        if track_id not in self.track_history:
+            self.track_history[track_id] = []
+
+        self.track_history[track_id].append(
+            (world_x, world_y)
+        )
+
+        # Keep only recent positions
+        self.track_history[track_id] = \
+            self.track_history[track_id][-history_length:]
+
+        history = self.track_history[track_id]
+        # Draw lines
+        for i in range(1, len(history)):
+            x1 = int(history[i - 1][0] + offset_x)
+            y1 = int(history[i - 1][1] + offset_y)
+
+            x2 = int(history[i][0] + offset_x)
+            y2 = int(history[i][1] + offset_y)
+
+            thickness = int(1 + (4 * i / len(history)))
+
+            cv2.line(frame, (x1, y1), (x2, y2), color, thickness)
+        return frame
 
 
     def draw_annotations(self, video_frames, tracks, team_ball_control):
         output_video_frames= []
         for frame_num, frame in enumerate(video_frames):
             frame = frame.copy()
+            offset_x, offset_y = self.motion_estimator.update_camera(frame)
+            print(
+                f"Frame {frame_num}: "
+                f"dx={offset_x:.1f}, "
+                f"dy={offset_y:.1f}"
+            )
 
             player_dict = tracks["players"][frame_num]
             ball_dict = tracks["ball"][frame_num]
@@ -662,6 +719,15 @@ class Tracker:
                     color,
                     track_id,
                     draw_id=True
+                )
+                #Draw player trajectory lines
+                frame = self.draw_trajectory(
+                    frame,
+                    track_id,
+                    bbox,
+                    color,
+                    offset_x = offset_x,
+                    offset_y = offset_y
                 )
                 if player.get('has_ball', False):
                     frame = self.draw_triangle(frame, bbox, (0, 0, 255))
@@ -724,6 +790,15 @@ class Tracker:
             #     f"Players={len(player_dict)} "
             #     f"Unique IDs Seen={len(self.all_player_ids)}"
             # )
+
+            # Clean up dead tracks:
+            active_ids = set(player_dict.keys())
+
+            for track_id in list(self.track_history.keys()):
+
+                if track_id not in active_ids:
+                    self.track_history[track_id] = \
+                        self.track_history[track_id][-20:]
 
         return output_video_frames
 
