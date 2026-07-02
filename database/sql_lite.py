@@ -6,7 +6,7 @@ class SQLiteManager:
     def __init__(self, db_path="sports_db/soccer_tracking.db"):
         self.conn = sqlite3.connect(db_path)
         self.cursor = self.conn.cursor()
-        
+
 
     def create_tables(self):
         self.cursor.execute("""
@@ -40,41 +40,97 @@ class SQLiteManager:
             y2 REAL
         )
         """)
+        self.cursor.execute("""
+        CREATE TABLE IF NOT EXISTS matches (
+            match_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            video_name TEXT,
+            date_run DATETIME DEFAULT CURRENT_TIMESTAMP,
+            fps REAL,
+            frame_width INTEGER,
+            frame_height INTEGER
+        );
+        """)
+
+        try:
+            self.cursor.execute(
+                "ALTER TABLE players ADD COLUMN match_id INTEGER"
+            )
+        except sqlite3.OperationalError:
+            pass
+
+        try:
+            self.cursor.execute(
+                "ALTER TABLE referees ADD COLUMN match_id INTEGER"
+            )
+        except sqlite3.OperationalError:
+            pass
+
+        try:
+            self.cursor.execute(
+                "ALTER TABLE ball ADD COLUMN match_id INTEGER"
+            )
+        except sqlite3.OperationalError:
+            pass
 
         self.conn.commit()
+
+    def create_match(
+            self,
+            video_name,
+            fps,
+            width,
+            height
+    ):
+        self.cursor.execute("""
+            INSERT INTO Matches
+            (video_name, fps, frame_width, frame_height)
+            OUTPUT INSERTED.match_id
+            VALUES (?, ?, ?, ?)
+        """, (
+            video_name,
+            fps,
+            width,
+            height
+        ))
+
+        return self.cursor.fetchone()[0]
 
     def insert_player(
             self,
             frame_num,
             track_id,
-            bbox
+            bbox,
+            match_id
     ):
         self.cursor.execute("""
         INSERT INTO players
-        VALUES (?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
         """, (
             frame_num,
             track_id,
             bbox[0],
             bbox[1],
             bbox[2],
-            bbox[3]
+            bbox[3],
+            match_id
         ))
 
     def insert_ball(
             self,
             frame_num,
-            bbox
+            bbox,
+            match_id
     ):
         self.cursor.execute("""
         INSERT INTO ball
-        VALUES (?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?)
         """, (
             frame_num,
             bbox[0],
             bbox[1],
             bbox[2],
-            bbox[3]
+            bbox[3],
+            match_id
         ))
 
     def player_info(self):

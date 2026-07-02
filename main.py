@@ -80,6 +80,17 @@ def main():
     # Create database (SQL Server)
     sqlserver_db = SQLServerManager()
 
+    #Create match
+    print(type(fps))
+    print(fps)
+    match_id = sqlserver_db.create_match(
+        video_name=video_path,
+        fps=fps,
+        width=1920,
+        height=1080,
+    )
+
+
     # Create tables
     sqlite_db.create_tables()
 
@@ -97,7 +108,8 @@ def main():
                 db.insert_player(
                     frame_num,
                     track_id,
-                    player["bbox"]
+                    player["bbox"],
+                    match_id
                 )
 
     #Insert Ball
@@ -113,7 +125,8 @@ def main():
             for db in databases:
                 db.insert_ball(
                     frame_num,
-                    ball_dict[1]["bbox"]
+                    ball_dict[1]["bbox"],
+                    match_id
                 )
     sqlite_db.save()
     sqlserver_db.save()
@@ -166,12 +179,12 @@ def main():
 
     heatmap_maker.save_heatmap(
         team_heatmap,
-        "output_heatmaps/team_heatmap.png"
+        "output_heatmaps/team_heatmap_low.png"
     )
 
     heatmap_maker.save_heatmap(
         player_heatmap,
-        "output_heatmaps/player1_heatmap.png"
+        "output_heatmaps/player1_heatmap_low.png"
     )
 
     # Interpolate ball positions
@@ -286,7 +299,7 @@ def main():
     #Save Video
     save_video(
         output_video_frames,
-        'output_videos/output_video_test_trails.avi',
+        'output_videos/output_video_test_low_trails.avi',
         fps
     )
 

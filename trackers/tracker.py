@@ -60,6 +60,7 @@ class Tracker:
         self.ball_alpha = 0.7
         self.previous_ids = set()
         self.motion_estimator = CameraMotionEstimator()
+        self.ball_history = []
 
 
     def frame_blur_score(self, frame):
@@ -559,7 +560,27 @@ class Tracker:
         cv2.drawContours(frame, [triangle_points], 0, color, cv2.FILLED)
         cv2.drawContours(frame, [triangle_points], 0, (0,0,0), 2)
         return frame
-    # --- NEW ---
+    #Draws the ball trail using the past locations stored in its history
+    def draw_ball_trail(
+            self,
+            frame,
+            color=(0, 255, 255)
+    ):
+
+        for i in range(
+                1,
+                len(self.ball_history)
+        ):
+            cv2.line(
+                frame,
+                self.ball_history[i - 1],
+                self.ball_history[i],
+                color,
+                2
+            )
+
+        return frame
+    # Draws team ball control
     def draw_team_ball_control(self, frame, frame_num, team_ball_control):
         # Draw a semi transparent rectangle
         overlay = frame.copy()
@@ -682,6 +703,42 @@ class Tracker:
             cv2.line(frame, (x1, y1), (x2, y2), color, thickness)
         return frame
 
+    #Predicts the direction the ball is going in
+    def predict_ball_direction(self):
+
+        if len(self.ball_history) < 5:
+            return None
+
+        vx_total = 0
+        vy_total = 0
+
+        for i in range(
+                1,
+                len(self.ball_history)
+        ):
+            vx_total += (
+                    self.ball_history[i][0]
+                    - self.ball_history[i - 1][0]
+            )
+
+            vy_total += (
+                    self.ball_history[i][1]
+                    - self.ball_history[i - 1][1]
+            )
+
+        vx = vx_total / (len(self.ball_history) - 1)
+        vy = vy_total / (len(self.ball_history) - 1)
+
+        x, y = self.ball_history[-1]
+
+        future_x = x + vx * 10
+        future_y = y + vy * 10
+
+        return (
+            (x, y),
+            (int(future_x), int(future_y))
+        )
+
 
     def draw_annotations(self, video_frames, tracks, team_ball_control):
         output_video_frames= []
@@ -753,10 +810,37 @@ class Tracker:
                 )
 
             # Draw Ball
+            frame = self.draw_ball_trail(frame)
             for track_id, ball in ball_dict.items():
                 bbox = ball["bbox"]
                 self.last_ball_bbox = bbox
 
+            # Keep last 30 ball locations
+            if self.last_ball_bbox is not None:
+                x1, y1, x2, y2 = self.last_ball_bbox
+
+                center_x = int((x1 + x2) / 2)
+                center_y = int((y1 + y2) / 2)
+
+                self.ball_history.append(
+                    (center_x, center_y)
+                )
+
+                self.ball_history = self.ball_history[-30:]
+
+            # Draw the ball predictions
+            ball_prediction = self.predict_ball_direction()
+
+            if ball_prediction is not None:
+                start_point, end_point = ball_prediction
+                cv2.arrowedLine(
+                    frame,
+                    start_point,
+                    end_point,
+                    (0,255,255),
+                    3)
+
+            #Draw green triangle over ball
             if self.last_ball_bbox is not None:
                 frame = self.draw_triangle(
                     frame,
