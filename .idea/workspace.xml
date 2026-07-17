@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="7c84d3b5-263e-4db9-aa1f-cc7f16c05e1b" name="Changes" comment="Commit adding heatmaps, database, and trails">
+    <list default="true" id="7c84d3b5-263e-4db9-aa1f-cc7f16c05e1b" name="Changes" comment="Implemented more robust database and ball trajectories">
+      <change afterPath="$PROJECT_DIR$/Training/World_Cup_History_API.ipynb" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/Video_Input/Basketball_Test_Video.mp4" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/Video_Input/Soccer_Test_Video2.mp4" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/Video_Input/Soccer_Test_Video3.mp4" afterDir="false" />
@@ -10,11 +11,20 @@
       <change afterPath="$PROJECT_DIR$/Video_Input/Soccer_Test_Video6.mp4" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/Video_Input/Soccer_Video1.MP4" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/Video_Input/Soccer_Video2.MP4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/analytics/distance_analyzer.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/analytics/positioning.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/analytics/possession_analyzer.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/analytics/touch_analyzer.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/exporters/json_exporter.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/homography/homography.py" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/runs/detect/predict-2/Soccer_Test_Video.avi" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/runs/detect/predict-3/Soccer_Test_Video.avi" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/runs/detect/predict/Soccer_Test_Video.avi" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/runs/detect/track/Soccer_Test_Video.avi" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/visualization/pitch_visualizer.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analytics/heatmaps.py" beforeDir="false" afterPath="$PROJECT_DIR$/analytics/heatmaps.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analytics/player_histories.py" beforeDir="false" afterPath="$PROJECT_DIR$/analytics/player_histories.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/database/sql_lite.py" beforeDir="false" afterPath="$PROJECT_DIR$/database/sql_lite.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/database/sql_server.py" beforeDir="false" afterPath="$PROJECT_DIR$/database/sql_server.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
@@ -57,31 +67,32 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "Python.main.executor": "Run",
-    "Python.sql_lite.executor": "Run",
-    "Python.sql_server.executor": "Run",
-    "Python.test.executor": "Run",
-    "Python.tracker.executor": "Run",
-    "Python.video_utils.executor": "Run",
-    "Python.yolo_inference.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
-    "codeWithMe.voiceChat.enabledByDefault": "false",
-    "git-widget-placeholder": "master",
-    "last_opened_file_path": "C:/Users/andre/PycharmProjects/SoccerVideoAnalysisDemo",
-    "nodejs_package_manager_path": "npm"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;Python.main.executor&quot;: &quot;Run&quot;,
+    &quot;Python.sql_lite.executor&quot;: &quot;Run&quot;,
+    &quot;Python.sql_server.executor&quot;: &quot;Run&quot;,
+    &quot;Python.test.executor&quot;: &quot;Run&quot;,
+    &quot;Python.tracker.executor&quot;: &quot;Run&quot;,
+    &quot;Python.video_utils.executor&quot;: &quot;Run&quot;,
+    &quot;Python.yolo_inference.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/andre/PycharmProjects/SoccerVideoAnalysisDemo&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\andre\PycharmProjects\SoccerVideoAnalysisDemo" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\andre\PycharmProjects\SoccerVideoAnalysisDemo\assets" />
       <recent name="C:\Users\andre\PycharmProjects\SoccerVideoAnalysisDemo\sports_db" />
     </key>
   </component>
@@ -156,7 +167,15 @@
       <option name="project" value="LOCAL" />
       <updated>1782319748054</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="Implemented more robust database and ball trajectories">
+      <option name="closed" value="true" />
+      <created>1783003795645</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1783003795645</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -190,6 +209,7 @@
     <MESSAGE value="Updated files for sports analysis pipeline" />
     <MESSAGE value="Fixed tracker instability" />
     <MESSAGE value="Commit adding heatmaps, database, and trails" />
-    <option name="LAST_COMMIT_MESSAGE" value="Commit adding heatmaps, database, and trails" />
+    <MESSAGE value="Implemented more robust database and ball trajectories" />
+    <option name="LAST_COMMIT_MESSAGE" value="Implemented more robust database and ball trajectories" />
   </component>
 </project>

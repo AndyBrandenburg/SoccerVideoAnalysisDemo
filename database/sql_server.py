@@ -83,11 +83,24 @@ class SQLServerManager:
             frame_num,
             track_id,
             bbox,
-            match_id
+            match_id,
+            pitch_x,
+            pitch_y
     ):
         self.cursor.execute("""
-        INSERT INTO Players
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO players
+        (
+            frame_num,
+            track_id,
+            x1,
+            y1,
+            x2,
+            y2,
+            match_id,
+            pitch_x,
+            pitch_y
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             frame_num,
             track_id,
@@ -95,25 +108,31 @@ class SQLServerManager:
             bbox[1],
             bbox[2],
             bbox[3],
-            match_id
+            match_id,
+            float(pitch_x),
+            float(pitch_y)
         ))
 
     def insert_ball(
             self,
             frame_num,
             bbox,
-            match_id
+            match_id,
+            pitch_x,
+            pitch_y
     ):
         self.cursor.execute("""
         INSERT INTO Ball
-        VALUES (?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             frame_num,
             bbox[0],
             bbox[1],
             bbox[2],
             bbox[3],
-            match_id
+            match_id,
+            float(pitch_x),
+            float(pitch_y)
         ))
 
     def player_info(self):

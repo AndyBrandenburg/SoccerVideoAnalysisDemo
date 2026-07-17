@@ -10,7 +10,9 @@ class HeatmapMaker:
             self,
             player_history,
             width,
-            height
+            height,
+            pitch_length=105,
+            pitch_width=68
     ):
         heatmap = np.zeros(
             (height, width),
@@ -19,8 +21,18 @@ class HeatmapMaker:
 
         for point in player_history:
 
-            x = int(point["x"])
-            y = int(point["y"])
+            # Convert pitch meters to image pixels
+            x = int(
+                point["pitch_x"] *
+                width /
+                pitch_length
+            )
+
+            y = int(
+                point["pitch_y"] *
+                height /
+                pitch_width
+            )
 
             if 0 <= x < width and 0 <= y < height:
                 heatmap[y, x] += 1
@@ -32,7 +44,7 @@ class HeatmapMaker:
 
         heatmap = cv2.GaussianBlur(
             heatmap,
-            (101, 101),
+            (31, 31),
             0
         )
 
@@ -50,8 +62,17 @@ class HeatmapMaker:
 
             for point in history:
 
-                x = int(point["x"])
-                y = int(point["y"])
+                x = int(
+                    point["pitch_x"] *
+                    width /
+                    105
+                )
+
+                y = int(
+                    point["pitch_y"] *
+                    height /
+                    68
+                )
 
                 if 0 <= x < width and 0 <= y < height:
                     heatmap[y, x] += 1
@@ -60,7 +81,7 @@ class HeatmapMaker:
         #Implements Blurring for smoother appearance
         heatmap = cv2.GaussianBlur(
             heatmap,
-            (101, 101),
+            (31, 31),
             0
         )
 

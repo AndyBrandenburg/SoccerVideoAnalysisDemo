@@ -69,9 +69,41 @@ class SQLiteManager:
             self.cursor.execute(
                 "ALTER TABLE ball ADD COLUMN match_id INTEGER"
             )
+
+        except sqlite3.OperationalError:
+            pass
+        #Alters the players table to add pitch_x and pitch_y
+        try:
+            self.cursor.execute("""
+                ALTER TABLE players
+                ADD COLUMN pitch_x REAL
+            """)
         except sqlite3.OperationalError:
             pass
 
+        try:
+            self.cursor.execute("""
+                ALTER TABLE players
+                ADD COLUMN pitch_y REAL
+            """)
+        except sqlite3.OperationalError:
+            pass
+        #Alters the ball table to add pitch_x and pitch_y columns
+        try:
+            self.cursor.execute("""
+                ALTER TABLE ball
+                ADD COLUMN pitch_x REAL
+            """)
+        except sqlite3.OperationalError:
+            pass
+
+        try:
+            self.cursor.execute("""
+                ALTER TABLE ball
+                ADD COLUMN pitch_y REAL
+            """)
+        except sqlite3.OperationalError:
+            pass
         self.conn.commit()
 
     def create_match(
@@ -100,11 +132,13 @@ class SQLiteManager:
             frame_num,
             track_id,
             bbox,
-            match_id
+            match_id,
+            pitch_x,
+            pitch_y
     ):
         self.cursor.execute("""
         INSERT INTO players
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             frame_num,
             track_id,
@@ -112,25 +146,31 @@ class SQLiteManager:
             bbox[1],
             bbox[2],
             bbox[3],
-            match_id
+            match_id,
+            float(pitch_x),
+            float(pitch_y)
         ))
 
     def insert_ball(
             self,
             frame_num,
             bbox,
-            match_id
+            match_id,
+            pitch_x,
+            pitch_y
     ):
         self.cursor.execute("""
         INSERT INTO ball
-        VALUES (?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             frame_num,
             bbox[0],
             bbox[1],
             bbox[2],
             bbox[3],
-            match_id
+            match_id,
+            float(pitch_x),
+            float(pitch_y)
         ))
 
     def player_info(self):

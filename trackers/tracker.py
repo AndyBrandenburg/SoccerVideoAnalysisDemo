@@ -14,22 +14,9 @@ import traceback
 from itertools import combinations
 from utils import get_center_of_bbox, get_bbox_width
 from camera_motion.camera_motion import CameraMotionEstimator
+from homography.homography import HomographyGenerator
 
 # Tracker
-def json_converter(obj):
-    if isinstance(obj, np.integer):
-        return int(obj)
-
-    if isinstance(obj, np.floating):
-        return float(obj)
-
-    if isinstance(obj, np.ndarray):
-        return obj.tolist()
-
-    raise TypeError(
-        f"Object of type {type(obj)} "
-        f"is not JSON serializable"
-    )
 
 class Tracker:
     def __init__(self, model_path):
@@ -158,7 +145,7 @@ class Tracker:
         print("TRACKER INSTANCE IN METHOD:", id(self))
         print(__file__)
         print("RUNNING TRACKER VERSION JUNE-9-TEST")
-        tracking_export = []
+        # tracking_export = []
 
         print("read_from_stub =", read_from_stub)
         print("stub exists =", os.path.exists(stub_path) if stub_path else False)
@@ -464,37 +451,37 @@ class Tracker:
                     "bbox": best_ball
                 }
             # Populate frame data
-            tracking_export.append(frame_data)
+            # tracking_export.append(frame_data)
 
 
 
 
-        print("EXPORT LENGTH:", len(tracking_export))
+        # print("EXPORT LENGTH:", len(tracking_export))
         if stub_path is not None:
             with open(stub_path, 'wb') as f:
                 pickle.dump(tracks, f)
         #Debugging code to see if JSON file is being written
-        print(">>> ABOUT TO WRITE JSON")
-
-        output_path = os.path.join(
-            os.getcwd(),
-            "JSON_data",
-            "tracking_output.json"
-        )
-
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
-
-        print("Saving JSON to:", output_path)
-
-        with open(output_path, "w") as f:
-            json.dump(
-                tracking_export,
-                f,
-                indent=4,
-                default=json_converter
-            )
-
-        print("JSON WRITE COMPLETE")
+        # print(">>> ABOUT TO WRITE JSON")
+        #
+        # output_path = os.path.join(
+        #     os.getcwd(),
+        #     "JSON_data",
+        #     "tracking_output.json"
+        # )
+        #
+        # os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        #
+        # print("Saving JSON to:", output_path)
+        #
+        # with open(output_path, "w") as f:
+        #     json.dump(
+        #         tracking_export,
+        #         f,
+        #         indent=4,
+        #         default=json_converter
+        #     )
+        #
+        # print("JSON WRITE COMPLETE")
         return tracks
 
     def draw_ellipse(self, frame, bbox, color, track_id = None, draw_id = True):
@@ -786,6 +773,7 @@ class Tracker:
                     offset_x = offset_x,
                     offset_y = offset_y
                 )
+
                 if player.get('has_ball', False):
                     frame = self.draw_triangle(frame, bbox, (0, 0, 255))
 
