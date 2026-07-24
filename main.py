@@ -11,7 +11,7 @@ from analytics.player_histories import build_player_histories
 from camera_motion.camera_motion import CameraMotionEstimator
 from database.sql_lite import SQLiteManager
 from database.sql_server import SQLServerManager
-from analytics.heatmaps import  HeatmapMaker
+from analytics.heatmaps import  HeatmapAnalyzer
 from homography.homography import HomographyGenerator
 from exporters.json_exporter import export_tracking_json
 from visualization import pitch_visualizer
@@ -20,6 +20,9 @@ from analytics.positioning import Position_Generator
 from analytics.possession_analyzer import PossessionAnalyzer
 from analytics.touch_analyzer import TouchAnalyzer
 from analytics.distance_analyzer import DistanceAnalyzer
+from analytics.history_builder import HistoryBuilder
+from analytics.team_zone_analyzer import TeamZoneAnalyzer
+from analytics.player_statistics_builder import PlayerStatisticsBuilder
 
 # Main
 def collect_player_colors(
@@ -134,15 +137,23 @@ def main():
 
     # Create database (SQL Server)
     sqlserver_db = SQLServerManager()
+    # Create SQLite tables
+    sqlite_db.create_tables()
 
-    #Create match
-    print(type(fps))
-    print(fps)
-    match_id = sqlserver_db.create_match(
+    # Create match in SQL Server
+    sqlserver_match_id = sqlserver_db.create_match(
         video_name=video_path,
         fps=fps,
         width=1920,
-        height=1080,
+        height=1080
+    )
+
+    # Create match in SQLite
+    sqlite_match_id = sqlite_db.create_match(
+        video_name=video_path,
+        fps=fps,
+        width=1920,
+        height=1080
     )
 
 
@@ -151,47 +162,48 @@ def main():
 
     #Insert Players
     databases = [
-        sqlite_db,
-        sqlserver_db
+        (sqlite_db, sqlite_match_id),
+        (sqlserver_db, sqlserver_match_id)
     ]
 
     for frame_num, player_dict in enumerate(tracks["players"]):
 
         for track_id, player in player_dict.items():
 
-            for db in databases:
+            for db, match_id in databases:
                 db.insert_player(
+
                     frame_num,
                     track_id,
                     player["bbox"],
                     match_id,
                     player["pitch_x"],
-                    player["pitch_y"]
+                    player["pitch_y"],
+                    player.get("team"),
+                    player.get("team_color"),
+                    player.get("has_ball", False)
+
                 )
 
     #Insert Ball
-    databases = [
-        sqlite_db,
-        sqlserver_db
-    ]
-
     for frame_num, ball_dict in enumerate(tracks["ball"]):
 
         if 1 in ball_dict:
-
-            for db in databases:
+            for db, match_id in databases:
                 db.insert_ball(
+
                     frame_num,
                     ball_dict[1]["bbox"],
                     match_id,
                     ball_dict[1]["pitch_x"],
                     ball_dict[1]["pitch_y"]
+
                 )
+
     sqlite_db.save()
     sqlserver_db.save()
 
-    sqlite_db.close()
-    sqlserver_db.close()
+
 
 
 
@@ -209,38 +221,38 @@ def main():
         player_histories[1][:5]
     )
 
-    #Uses the code in heatmaps/HeatmapMaker to build the player heatmap
-    heatmap_maker = HeatmapMaker()
-    PITCH_WIDTH = 1050
-    PITCH_HEIGHT = 680
-
-    # heatmap_width = video_frames[0].shape[1]
-    # heatmap_height = video_frames[0].shape[0]
-    #Debugging code
-    for item in player_histories[1][:5]:
-        print("-----------------PLAYER_HISTORIES_ITEM----------------------")
-        print(item)
-
-    player_heatmap = heatmap_maker.build_player_heatmap(
-        player_histories[1],
-        PITCH_WIDTH,
-        PITCH_HEIGHT
-    )
-    team_heatmap = heatmap_maker.build_team_heatmap(
-        player_histories,
-        PITCH_WIDTH,
-        PITCH_HEIGHT
-    )
-
-    heatmap_maker.save_heatmap(
-        team_heatmap,
-        "output_heatmaps/team_heatmap_low.png"
-    )
-
-    heatmap_maker.save_heatmap(
-        player_heatmap,
-        "output_heatmaps/player1_heatmap_low.png"
-    )
+    # #Uses the code in heatmaps/HeatmapMaker to build the player heatmap
+    # heatmap_maker = HeatmapMaker()
+    # PITCH_WIDTH = 1050
+    # PITCH_HEIGHT = 680
+    #
+    # # heatmap_width = video_frames[0].shape[1]
+    # # heatmap_height = video_frames[0].shape[0]
+    # #Debugging code
+    # for item in player_histories[1][:5]:
+    #     print("-----------------PLAYER_HISTORIES_ITEM----------------------")
+    #     print(item)
+    #
+    # player_heatmap = heatmap_maker.build_player_heatmap(
+    #     player_histories[1],
+    #     PITCH_WIDTH,
+    #     PITCH_HEIGHT
+    # )
+    # team_heatmap = heatmap_maker.build_team_heatmap(
+    #     player_histories,
+    #     PITCH_WIDTH,
+    #     PITCH_HEIGHT
+    # )
+    #
+    # heatmap_maker.save_heatmap(
+    #     team_heatmap,
+    #     "output_heatmaps/team_heatmap_low.png"
+    # )
+    #
+    # heatmap_maker.save_heatmap(
+    #     player_heatmap,
+    #     "output_heatmaps/player1_heatmap_low.png"
+    # )
 
     # Interpolate ball positions
     print("BALL FRAME 0:", tracks["ball"][0])
@@ -345,6 +357,21 @@ def main():
                 team_ball_control.append(0)
     team_ball_control = np.array(team_ball_control)
 
+    #History Builder
+    history_builder = HistoryBuilder()
+
+    player_histories = history_builder.build_player_history(tracks)
+
+    team_histories = history_builder.build_team_history(
+        player_histories
+    )
+
+    print("TEAM HISTORIES DEBUG")
+
+    for team, history in team_histories.items():
+        print("TEAM:", team)
+        print("NUMBER OF POSITIONS:", len(history))
+        print("FIRST ENTRY:", history[0])
 
     # Possession analysis
     print("-----CHECK FOR FRAMES WITH POSSESSION-----")
@@ -468,19 +495,102 @@ def main():
         average_pitch,
         match_analysis["average_positions"]
     )
-
-    #Distance Analyzer
-    distance_analyzer = DistanceAnalyzer()
-    distance_results = distance_analyzer.calculate_distance(
-        tracks
-    )
-    match_analysis["distance"] = distance_results
-
-
     cv2.imwrite(
         "assets/average_positions.png",
         average_pitch
     )
+
+    #Distance Analyzer
+    distance_analyzer = DistanceAnalyzer()
+    match_analysis["distance"] = \
+        distance_analyzer.calculate_distance(
+            player_histories
+        )
+
+    #Zone analyzer
+    zone_analyzer = TeamZoneAnalyzer()
+
+    team_centers = zone_analyzer.calculate_team_centers(
+        team_histories
+    )
+
+    team_hulls = zone_analyzer.calculate_convex_hulls(
+        team_histories
+    )
+
+    match_analysis["team_zones"] = {
+
+        "team_centers": team_centers,
+
+        "team_hulls": team_hulls
+
+    }
+
+    zone_pitch = pitch_visualizer.create_pitch()
+    zone_pitch = pitch_visualizer.draw_team_zones(
+        zone_pitch,
+        match_analysis["team_zones"]["team_centers"]
+    )
+    print("TEAM ZONE ANALYSIS:")
+    print(match_analysis["team_zones"]["team_hulls"].keys())
+
+    zone_pitch = pitch_visualizer.draw_team_hulls(
+        zone_pitch,
+        match_analysis["team_zones"]["team_hulls"]
+    )
+
+    cv2.imwrite(
+        "assets/team_zones_hulls.png",
+        zone_pitch
+    )
+
+    ########-----HEATMAPS-----#########
+    heatmap_analyzer = HeatmapAnalyzer()
+
+    match_analysis["heatmaps"] = \
+        heatmap_analyzer.calculate_team_heatmaps(
+            team_histories
+        )
+
+    heatmap_pitch = pitch_visualizer.create_pitch()
+    heatmap_pitch = pitch_visualizer.draw_team_heatmaps(
+
+        heatmap_pitch,
+        match_analysis["heatmaps"]
+
+    )
+    cv2.imwrite(
+
+        "output_heatmaps/team_heatmaps.png",
+        heatmap_pitch
+
+    )
+
+    #STATISTICS BUILDER CALL
+    statistics_builder = PlayerStatisticsBuilder()
+
+    match_analysis["player_statistics"] = \
+        statistics_builder.build_player_statistics(
+            match_analysis
+        )
+
+    #Implement statistics and analysis into the database
+    for track_id, stats in match_analysis["player_statistics"].items():
+        sqlite_db.insert_player_statistics(
+            sqlite_match_id,
+            stats
+        )
+
+        sqlserver_db.insert_player_statistics(
+            sqlserver_match_id,
+            stats
+        )
+
+    sqlite_db.save()
+    sqlserver_db.save()
+    sqlite_db.close()
+    sqlserver_db.close()
+
 
     save_video(
         output_pitch_frames,

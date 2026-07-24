@@ -1,49 +1,36 @@
+from analytics.history_builder import HistoryBuilder
 class Position_Generator:
     def __init__(self):
         pass
 
     def collect_player_positions(self, tracks):
 
-        player_positions = {}
+        player_histories = HistoryBuilder().build_player_history(tracks)
 
-        for frame_players in tracks["players"]:
+        return player_histories
 
-            for track_id, player in frame_players.items():
-                player_positions.setdefault(track_id, []).append({
-
-                    "pitch_x": player["pitch_x"],
-
-                    "pitch_y": player["pitch_y"],
-
-                    "team": player.get("team"),
-
-                    "team_color": player.get("team_color")
-                })
-
-        return player_positions
-
-    def calculate_average_positions(self, player_positions):
+    def calculate_average_positions(self, player_histories):
 
         average_positions = {}
 
-        for track_id, positions in player_positions.items():
+        for track_id, history in player_histories.items():
 
             total_x = 0
             total_y = 0
 
-            for point in positions:
+            for point in history:
                 total_x += point["pitch_x"]
                 total_y += point["pitch_y"]
 
             average_positions[track_id] = {
 
-                "pitch_x": total_x / len(positions),
+                "pitch_x": total_x / len(history),
 
-                "pitch_y": total_y / len(positions),
+                "pitch_y": total_y / len(history),
 
-                "team": positions[0]["team"],
+                "team": history[0]["team"],
 
-                "team_color": positions[0]["team_color"]
+                "team_color": history[0]["team_color"]
 
             }
 

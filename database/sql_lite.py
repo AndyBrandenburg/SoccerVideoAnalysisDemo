@@ -104,6 +104,87 @@ class SQLiteManager:
             """)
         except sqlite3.OperationalError:
             pass
+
+        ###################-----ADDS NEW TABLES FOR PLAYERS TABLE 7/23/2026-----#########################
+        try:
+            self.cursor.execute("""
+                ALTER TABLE players
+                ADD COLUMN team INTEGER
+            """)
+        except sqlite3.OperationalError:
+            pass
+
+        try:
+            self.cursor.execute("""
+                ALTER TABLE players
+                ADD COLUMN team_color_b INTEGER
+            """)
+        except sqlite3.OperationalError:
+            pass
+
+        try:
+            self.cursor.execute("""
+                ALTER TABLE players
+                ADD COLUMN team_color_g INTEGER
+            """)
+        except sqlite3.OperationalError:
+            pass
+
+        try:
+            self.cursor.execute("""
+                ALTER TABLE players
+                ADD COLUMN team_color_r INTEGER
+            """)
+        except sqlite3.OperationalError:
+            pass
+
+        try:
+            self.cursor.execute("""
+                ALTER TABLE players
+                ADD COLUMN has_ball INTEGER
+            """)
+        except sqlite3.OperationalError:
+            pass
+
+        ###CREATE PLAYER STATISTICS TABLE###
+
+        self.cursor.execute("""
+        CREATE TABLE IF NOT EXISTS PlayerStatistics(
+
+            statistic_id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+            match_id INTEGER,
+
+            track_id INTEGER,
+
+            team INTEGER,
+
+            average_pitch_x REAL,
+
+            average_pitch_y REAL,
+
+            touches INTEGER,
+
+            possession_percentage REAL,
+
+            distance_covered REAL,
+
+            recoveries INTEGER,
+
+            interceptions INTEGER,
+
+            top_speed REAL,
+
+            sprint_distance REAL,
+
+            movement_cluster INTEGER,
+
+            FOREIGN KEY(match_id)
+                REFERENCES matches(match_id)
+
+        )
+        """)
+
         self.conn.commit()
 
     def create_match(
@@ -113,10 +194,15 @@ class SQLiteManager:
             width,
             height
     ):
+
         self.cursor.execute("""
-            INSERT INTO Matches
-            (video_name, fps, frame_width, frame_height)
-            OUTPUT INSERTED.match_id
+            INSERT INTO matches
+            (
+                video_name,
+                fps,
+                frame_width,
+                frame_height
+            )
             VALUES (?, ?, ?, ?)
         """, (
             video_name,
@@ -125,7 +211,10 @@ class SQLiteManager:
             height
         ))
 
-        return self.cursor.fetchone()[0]
+
+        self.conn.commit()
+
+        return self.cursor.lastrowid
 
     def insert_player(
             self,
@@ -134,11 +223,30 @@ class SQLiteManager:
             bbox,
             match_id,
             pitch_x,
-            pitch_y
+            pitch_y,
+            team,
+            team_color,
+            has_ball
     ):
         self.cursor.execute("""
         INSERT INTO players
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (
+            frame_num,
+            track_id,
+            x1,
+            y1,
+            x2,
+            y2,
+            match_id,
+            pitch_x,
+            pitch_y,
+            team,
+            team_color_b,
+            team_color_g,
+            team_color_r,
+            has_ball
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             frame_num,
             track_id,
@@ -148,7 +256,15 @@ class SQLiteManager:
             bbox[3],
             match_id,
             float(pitch_x),
-            float(pitch_y)
+            float(pitch_y),
+            int(team) if team is not None else None,
+
+            int(team_color[0]) if team_color is not None else None,
+            int(team_color[1]) if team_color is not None else None,
+            int(team_color[2]) if team_color is not None else None,
+
+            int(has_ball)
+
         ))
 
     def insert_ball(
@@ -171,6 +287,54 @@ class SQLiteManager:
             match_id,
             float(pitch_x),
             float(pitch_y)
+        ))
+
+    def insert_player_statistics(
+            self,
+            match_id,
+            stats
+    ):
+
+        self.cursor.execute("""
+
+        INSERT INTO PlayerStatistics(
+
+            match_id,
+
+            track_id,
+
+            team,
+
+            average_pitch_x,
+
+            average_pitch_y,
+
+            touches,
+
+            possession_percentage,
+
+            distance_covered
+
+        )
+
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+
+        """, (
+            match_id,
+            stats["track_id"],
+
+            stats["team"],
+
+            stats["average_pitch_x"],
+
+            stats["average_pitch_y"],
+
+            stats["touches"],
+
+            stats["possession"],
+
+            stats["distance"]
+
         ))
 
     def player_info(self):

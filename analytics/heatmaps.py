@@ -2,108 +2,82 @@ from ultralytics.solutions import heatmap
 import numpy as np
 import cv2
 
-class HeatmapMaker:
-    def __init__(self):
-        pass
+class HeatmapAnalyzer:
 
-    def build_player_heatmap(
+    def __init__(
             self,
-            player_history,
-            width,
-            height,
-            pitch_length=105,
-            pitch_width=68
+            grid_width=40,
+            grid_height=25
     ):
-        heatmap = np.zeros(
-            (height, width),
-            dtype=np.float32
-        )
 
-        for point in player_history:
+        self.grid_width = grid_width
+        self.grid_height = grid_height
 
-            # Convert pitch meters to image pixels
-            x = int(
-                point["pitch_x"] *
-                width /
-                pitch_length
+        self.pitch_length = 105
+        self.pitch_width = 68
+
+
+
+    # Build heatmaps for each team
+
+    def calculate_team_heatmaps(
+            self,
+            team_histories
+    ):
+
+        team_heatmaps = {}
+
+        for team, history in team_histories.items():
+
+            heatmap = np.zeros(
+                (
+                    self.grid_height,
+                    self.grid_width
+                ),
+                dtype=np.float32
             )
-
-            y = int(
-                point["pitch_y"] *
-                height /
-                pitch_width
-            )
-
-            if 0 <= x < width and 0 <= y < height:
-                heatmap[y, x] += 1
-
-        print(
-            "Player heatmap points:",
-            np.count_nonzero(heatmap)
-        )
-
-        heatmap = cv2.GaussianBlur(
-            heatmap,
-            (31, 31),
-            0
-        )
-
-        return heatmap
-
-
-
-    def build_team_heatmap(self, player_histories, width, height):
-        heatmap = np.zeros(
-            (height, width),
-            dtype=np.float32
-        )
-
-        for history in player_histories.values():
 
             for point in history:
 
-                x = int(
-                    point["pitch_x"] *
-                    width /
-                    105
+                grid_x = int(
+                    point["pitch_x"]
+                    * self.grid_width
+                    / self.pitch_length
                 )
 
-                y = int(
-                    point["pitch_y"] *
-                    height /
-                    68
+                grid_y = int(
+                    point["pitch_y"]
+                    * self.grid_height
+                    / self.pitch_width
                 )
 
-                if 0 <= x < width and 0 <= y < height:
-                    heatmap[y, x] += 1
-        #Debugging code
-        print("Heatmap points:", np.count_nonzero(heatmap))
-        #Implements Blurring for smoother appearance
-        heatmap = cv2.GaussianBlur(
-            heatmap,
-            (31, 31),
-            0
-        )
+                if (
+                    0 <= grid_x < self.grid_width
+                    and
+                    0 <= grid_y < self.grid_height
+                ):
 
-        return heatmap
+                    heatmap[grid_y, grid_x] += 1
 
-    def save_heatmap(self, heatmap, output_path):
-        heatmap_norm = cv2.normalize(
-            heatmap,
-            None,
-            0,
-            255,
-            cv2.NORM_MINMAX
-        )
+            #blur for smoothing
+            heatmap = cv2.GaussianBlur(
+                heatmap,
+                (5,5),
+                0
+            )
 
-        heatmap_norm = heatmap_norm.astype(np.uint8)
+            if np.max(heatmap) > 0:
 
-        heatmap_color = cv2.applyColorMap(
-            heatmap_norm,
-            cv2.COLORMAP_JET
-        )
+                heatmap = heatmap / np.max(heatmap)
 
-        cv2.imwrite(
-            output_path,
-            heatmap_color
-        )
+
+            #Return the heatmap info in the dict
+            team_heatmaps[team] = {
+
+                "heatmap": heatmap,
+
+                "team_color": history[0]["team_color"]
+
+            }
+
+        return team_heatmaps

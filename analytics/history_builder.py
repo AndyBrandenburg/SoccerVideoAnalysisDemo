@@ -30,3 +30,22 @@ class HistoryBuilder:
                 })
 
         return player_histories
+
+    def build_team_history(self, player_histories):
+
+        team_histories = {}
+
+        for track_id, history in player_histories.items():
+
+            for point in history:
+                team = point["team"]
+
+                team_histories.setdefault(team, []).append({
+
+                    "track_id": track_id,
+
+                    **point
+
+                })
+
+        return team_histories

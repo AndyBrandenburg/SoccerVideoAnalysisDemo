@@ -85,7 +85,10 @@ class SQLServerManager:
             bbox,
             match_id,
             pitch_x,
-            pitch_y
+            pitch_y,
+            team,
+            team_color,
+            has_ball
     ):
         self.cursor.execute("""
         INSERT INTO players
@@ -98,9 +101,14 @@ class SQLServerManager:
             y2,
             match_id,
             pitch_x,
-            pitch_y
+            pitch_y,
+            team,
+            team_color_b,
+            team_color_g,
+            team_color_r,
+            has_ball
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             frame_num,
             track_id,
@@ -110,7 +118,14 @@ class SQLServerManager:
             bbox[3],
             match_id,
             float(pitch_x),
-            float(pitch_y)
+            float(pitch_y),
+            int(team) if team is not None else None,
+
+            int(team_color[0]) if team_color is not None else None,
+            int(team_color[1]) if team_color is not None else None,
+            int(team_color[2]) if team_color is not None else None,
+
+            int(has_ball)
         ))
 
     def insert_ball(
@@ -134,6 +149,43 @@ class SQLServerManager:
             float(pitch_x),
             float(pitch_y)
         ))
+
+    #INSERT PLAYER STATISTICS
+    def insert_player_statistics(
+            self,
+            match_id,
+            stats
+    ):
+        self.cursor.execute("""
+        INSERT INTO PlayerStatistics(
+            match_id,
+            track_id,
+            team,
+            touches,
+            distance_covered,
+            possession_percentage,
+            average_pitch_x,
+            average_pitch_y
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            int(match_id),
+
+            int(stats["track_id"]),
+
+            int(stats["team"]) if stats["team"] is not None else None,
+
+            int(stats["touches"]),
+
+            float(stats["distance"]),
+
+            float(stats["possession"]),
+
+            float(stats["average_pitch_x"]),
+
+            float(stats["average_pitch_y"])
+        ))
+        
 
     def player_info(self):
 

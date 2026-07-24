@@ -20,6 +20,7 @@ class PossessionAnalyzer():
             # Loop through every player in this frame
             for track_id, player in frame_players.items():
 
+
                 # Check if player has the ball
                 if player.get("has_ball", False):
 
