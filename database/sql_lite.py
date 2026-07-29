@@ -300,23 +300,14 @@ class SQLiteManager:
         INSERT INTO PlayerStatistics(
 
             match_id,
-
             track_id,
-
             team,
-
             average_pitch_x,
-
             average_pitch_y,
-
             touches,
-
             possession_percentage,
-
             distance_covered
-
         )
-
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 
         """, (

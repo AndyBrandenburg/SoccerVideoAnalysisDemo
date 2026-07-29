@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="7c84d3b5-263e-4db9-aa1f-cc7f16c05e1b" name="Changes" comment="Added some more analysis implementation including homography video generation, average player positions, touches, possession, and distance analysis.">
+    <list default="true" id="7c84d3b5-263e-4db9-aa1f-cc7f16c05e1b" name="Changes" comment="Updated history builder and analysis classes, added a new insert for player statistics in the database, also added zones and more pitch visualization and analysis.">
       <change afterPath="$PROJECT_DIR$/Training/World_Cup_History_API.ipynb" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/Video_Input/Basketball_Test_Video.mp4" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/Video_Input/Soccer_Test_Video2.mp4" afterDir="false" />
@@ -11,18 +11,17 @@
       <change afterPath="$PROJECT_DIR$/Video_Input/Soccer_Test_Video6.mp4" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/Video_Input/Soccer_Video1.MP4" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/Video_Input/Soccer_Video2.MP4" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/analytics/player_statistics_builder.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/analytics/team_zone_analyzer.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/analytics/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/exporters/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/homography/__init__.py" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/runs/detect/predict-2/Soccer_Test_Video.avi" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/runs/detect/predict-3/Soccer_Test_Video.avi" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/runs/detect/predict/Soccer_Test_Video.avi" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/runs/detect/track/Soccer_Test_Video.avi" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/visualization/tactical_visualizer.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analytics/distance_analyzer.py" beforeDir="false" afterPath="$PROJECT_DIR$/analytics/distance_analyzer.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/analytics/heatmaps.py" beforeDir="false" afterPath="$PROJECT_DIR$/analytics/heatmaps.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analytics/history_builder.py" beforeDir="false" afterPath="$PROJECT_DIR$/analytics/history_builder.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analytics/positioning.py" beforeDir="false" afterPath="$PROJECT_DIR$/analytics/positioning.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analytics/possession_analyzer.py" beforeDir="false" afterPath="$PROJECT_DIR$/analytics/possession_analyzer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analytics/team_zone_analyzer.py" beforeDir="false" afterPath="$PROJECT_DIR$/analytics/team_zone_analyzer.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/database/sql_lite.py" beforeDir="false" afterPath="$PROJECT_DIR$/database/sql_lite.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/database/sql_server.py" beforeDir="false" afterPath="$PROJECT_DIR$/database/sql_server.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
@@ -65,27 +64,28 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;Python.main.executor&quot;: &quot;Run&quot;,
-    &quot;Python.possession_analyzer.executor&quot;: &quot;Run&quot;,
-    &quot;Python.sql_lite.executor&quot;: &quot;Run&quot;,
-    &quot;Python.sql_server.executor&quot;: &quot;Run&quot;,
-    &quot;Python.test.executor&quot;: &quot;Run&quot;,
-    &quot;Python.tracker.executor&quot;: &quot;Run&quot;,
-    &quot;Python.video_utils.executor&quot;: &quot;Run&quot;,
-    &quot;Python.yolo_inference.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
-    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/andre/PycharmProjects/SoccerVideoAnalysisDemo&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "Python.heatmaps.executor": "Run",
+    "Python.main.executor": "Run",
+    "Python.possession_analyzer.executor": "Run",
+    "Python.sql_lite.executor": "Run",
+    "Python.sql_server.executor": "Run",
+    "Python.test.executor": "Run",
+    "Python.tracker.executor": "Run",
+    "Python.video_utils.executor": "Run",
+    "Python.yolo_inference.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "git-widget-placeholder": "master",
+    "last_opened_file_path": "C:/Users/andre/PycharmProjects/SoccerVideoAnalysisDemo",
+    "nodejs_package_manager_path": "npm"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\andre\PycharmProjects\SoccerVideoAnalysisDemo" />
@@ -182,7 +182,15 @@
       <option name="project" value="LOCAL" />
       <updated>1784310229232</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="Updated history builder and analysis classes, added a new insert for player statistics in the database, also added zones and more pitch visualization and analysis.">
+      <option name="closed" value="true" />
+      <created>1784912294628</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1784912294628</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -218,6 +226,7 @@
     <MESSAGE value="Commit adding heatmaps, database, and trails" />
     <MESSAGE value="Implemented more robust database and ball trajectories" />
     <MESSAGE value="Added some more analysis implementation including homography video generation, average player positions, touches, possession, and distance analysis." />
-    <option name="LAST_COMMIT_MESSAGE" value="Added some more analysis implementation including homography video generation, average player positions, touches, possession, and distance analysis." />
+    <MESSAGE value="Updated history builder and analysis classes, added a new insert for player statistics in the database, also added zones and more pitch visualization and analysis." />
+    <option name="LAST_COMMIT_MESSAGE" value="Updated history builder and analysis classes, added a new insert for player statistics in the database, also added zones and more pitch visualization and analysis." />
   </component>
 </project>

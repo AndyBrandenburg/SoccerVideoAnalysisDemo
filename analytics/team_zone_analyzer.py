@@ -84,3 +84,82 @@ class TeamZoneAnalyzer:
             }
 
         return team_hulls
+
+    def group_players_by_team(self, frame_players):
+
+        team_positions = {}
+
+        for track_id, player in frame_players.items():
+
+            team = player.get("team")
+
+            if team is None:
+                continue
+
+            team_positions.setdefault(team, []).append(player)
+
+        return team_positions
+
+    def calculate_frame_team_centers(self, frame_players):
+
+        team_positions = self.group_players_by_team(frame_players)
+
+        team_centers = {}
+
+        for team, players in team_positions.items():
+
+            total_x = 0
+            total_y = 0
+
+            for player in players:
+                total_x += player["pitch_x"]
+                total_y += player["pitch_y"]
+
+            team_centers[team] = {
+
+                "pitch_x": total_x / len(players),
+
+                "pitch_y": total_y / len(players),
+
+                "team_color": players[0]["team_color"]
+
+            }
+
+        return team_centers
+
+    def calculate_frame_team_hulls(self, frame_players):
+
+        team_positions = self.group_players_by_team(frame_players)
+
+        team_hulls = {}
+
+        for team, players in team_positions.items():
+
+            if len(players) < 3:
+                continue
+
+            points = []
+
+            for player in players:
+                points.append([
+
+                    player["pitch_x"],
+                    player["pitch_y"]
+
+                ])
+
+            points = np.array(
+                points,
+                dtype=np.float32
+            )
+
+            hull = cv2.convexHull(points)
+
+            team_hulls[team] = {
+
+                "hull": hull,
+                "team_color": players[0]["team_color"]
+
+            }
+
+        return team_hulls

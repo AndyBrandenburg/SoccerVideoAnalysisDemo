@@ -172,17 +172,11 @@ class SQLServerManager:
             int(match_id),
 
             int(stats["track_id"]),
-
             int(stats["team"]) if stats["team"] is not None else None,
-
             int(stats["touches"]),
-
             float(stats["distance"]),
-
             float(stats["possession"]),
-
             float(stats["average_pitch_x"]),
-
             float(stats["average_pitch_y"])
         ))
         

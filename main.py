@@ -23,6 +23,7 @@ from analytics.distance_analyzer import DistanceAnalyzer
 from analytics.history_builder import HistoryBuilder
 from analytics.team_zone_analyzer import TeamZoneAnalyzer
 from analytics.player_statistics_builder import PlayerStatisticsBuilder
+from visualization.tactical_visualizer import TacticalVisualizer
 
 # Main
 def collect_player_colors(
@@ -453,35 +454,21 @@ def main():
     #         break
 
     # Pitch Visualization
+    tactical_visualizer = TacticalVisualizer()
     pitch_visualizer = PitchVisualizer()
-    output_pitch_frames = []
     print("---BALL TRACKS---")
     print(tracks["ball"][0])
 
-    for frame_num in range(len(video_frames)):
-        pitch = pitch_visualizer.create_pitch()
+    pitch_frames = tactical_visualizer.build_pitch_video(
+        tracks,
+        video_frames
+    )
 
-        pitch = pitch_visualizer.draw_players(
-            pitch,
-            tracks["players"][frame_num]
-        )
-        pitch = pitch_visualizer.draw_referees(
-            pitch,
-            tracks["referees"][frame_num]
-        )
-
-        pitch = pitch_visualizer.draw_ball(
-            pitch,
-            tracks["ball"][frame_num]
-        )
-
-        output_pitch_frames.append(pitch)
-
-    len(output_pitch_frames)
-    print("-----PITCH FRAMES-----")
-    print(type(output_pitch_frames))
-    print(len(output_pitch_frames))
-    print(output_pitch_frames[0])
+    save_video(
+        pitch_frames,
+        "output_videos/pitch_view_trails.avi",
+        fps
+    )
 
     #Output for average positions:
     average_pitch = pitch_visualizer.create_pitch()
@@ -526,8 +513,26 @@ def main():
 
     }
 
+    ###-----ZONE VIDEO DRAWING LOOP-----###
+
+    zone_frames = tactical_visualizer.build_zone_video(
+
+        tracks,
+
+        video_frames
+
+    )
+    #Save Video
+    save_video(
+        zone_frames,
+        "output_videos/team_zones_video.avi",
+        fps
+    )
+    ####------END OF ZONE VIDEO BLOCK------####
+
+    ####------ZONE IMAGE DRAWING------####
     zone_pitch = pitch_visualizer.create_pitch()
-    zone_pitch = pitch_visualizer.draw_team_zones(
+    zone_pitch = pitch_visualizer.draw_team_centers(
         zone_pitch,
         match_analysis["team_zones"]["team_centers"]
     )
@@ -543,8 +548,20 @@ def main():
         "assets/team_zones_hulls.png",
         zone_pitch
     )
+    #####------END OF ZONE IMAGE DRAWING BLOCK------####
 
-    ########-----HEATMAPS-----#########
+    #####------HEATMAP VIDEO BLOCK-----#####
+    heatmap_frames = tactical_visualizer.build_heatmap_video(
+        tracks,
+        video_frames
+    )
+    save_video(
+        heatmap_frames,
+        "output_videos/team_heatmap_video.avi",
+        fps
+    )
+
+    ########-----HEATMAPS IMAGE BLOCK-----#########
     heatmap_analyzer = HeatmapAnalyzer()
 
     match_analysis["heatmaps"] = \
@@ -565,6 +582,7 @@ def main():
         heatmap_pitch
 
     )
+    ######-----HEATMAPS IMAGE BLOCK END-----######
 
     #STATISTICS BUILDER CALL
     statistics_builder = PlayerStatisticsBuilder()
@@ -592,11 +610,7 @@ def main():
     sqlserver_db.close()
 
 
-    save_video(
-        output_pitch_frames,
-        "output_videos/pitch_view_trails.avi",
-        fps
-    )
+
 
     # cv2.imwrite(
     #     "assets/pitch_test.png",

@@ -187,7 +187,7 @@ class PitchVisualizer:
 
         return pitch
 
-    def draw_team_zones(self, pitch, team_centers):
+    def draw_team_centers(self, pitch, team_centers):
         for team, center in team_centers.items():
             x, y = self.pitch_to_pixel(
                 center["pitch_x"],
