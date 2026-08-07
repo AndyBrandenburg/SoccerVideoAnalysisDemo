@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="7c84d3b5-263e-4db9-aa1f-cc7f16c05e1b" name="Changes" comment="Updated history builder and analysis classes, added a new insert for player statistics in the database, also added zones and more pitch visualization and analysis.">
+    <list default="true" id="7c84d3b5-263e-4db9-aa1f-cc7f16c05e1b" name="Changes" comment="Added more implementation for databases, added more analysis features like hulls, organized some of the architecture in the main and video building.">
+      <change afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/Training/World_Cup_History_API.ipynb" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/Video_Input/Basketball_Test_Video.mp4" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/Video_Input/Soccer_Test_Video2.mp4" afterDir="false" />
@@ -11,21 +12,21 @@
       <change afterPath="$PROJECT_DIR$/Video_Input/Soccer_Test_Video6.mp4" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/Video_Input/Soccer_Video1.MP4" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/Video_Input/Soccer_Video2.MP4" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/analytics/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/exporters/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/homography/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/index.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pipeline.py" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/runs/detect/predict-2/Soccer_Test_Video.avi" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/runs/detect/predict-3/Soccer_Test_Video.avi" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/runs/detect/predict/Soccer_Test_Video.avi" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/runs/detect/track/Soccer_Test_Video.avi" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/visualization/tactical_visualizer.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/streamlit_app.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/visualization/overlay_visualizer.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/analytics/heatmaps.py" beforeDir="false" afterPath="$PROJECT_DIR$/analytics/heatmaps.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/analytics/team_zone_analyzer.py" beforeDir="false" afterPath="$PROJECT_DIR$/analytics/team_zone_analyzer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/database/sql_lite.py" beforeDir="false" afterPath="$PROJECT_DIR$/database/sql_lite.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/database/sql_server.py" beforeDir="false" afterPath="$PROJECT_DIR$/database/sql_server.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/video_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/video_utils.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/visualization/pitch_visualizer.py" beforeDir="false" afterPath="$PROJECT_DIR$/visualization/pitch_visualizer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/visualization/tactical_visualizer.py" beforeDir="false" afterPath="$PROJECT_DIR$/visualization/tactical_visualizer.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -72,6 +73,7 @@
     "Python.possession_analyzer.executor": "Run",
     "Python.sql_lite.executor": "Run",
     "Python.sql_server.executor": "Run",
+    "Python.streamlit_app.executor": "Run",
     "Python.test.executor": "Run",
     "Python.tracker.executor": "Run",
     "Python.video_utils.executor": "Run",
@@ -190,7 +192,15 @@
       <option name="project" value="LOCAL" />
       <updated>1784912294628</updated>
     </task>
-    <option name="localTasksCounter" value="11" />
+    <task id="LOCAL-00011" summary="Added more implementation for databases, added more analysis features like hulls, organized some of the architecture in the main and video building.">
+      <option name="closed" value="true" />
+      <created>1785341327292</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1785341327292</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -227,6 +237,7 @@
     <MESSAGE value="Implemented more robust database and ball trajectories" />
     <MESSAGE value="Added some more analysis implementation including homography video generation, average player positions, touches, possession, and distance analysis." />
     <MESSAGE value="Updated history builder and analysis classes, added a new insert for player statistics in the database, also added zones and more pitch visualization and analysis." />
-    <option name="LAST_COMMIT_MESSAGE" value="Updated history builder and analysis classes, added a new insert for player statistics in the database, also added zones and more pitch visualization and analysis." />
+    <MESSAGE value="Added more implementation for databases, added more analysis features like hulls, organized some of the architecture in the main and video building." />
+    <option name="LAST_COMMIT_MESSAGE" value="Added more implementation for databases, added more analysis features like hulls, organized some of the architecture in the main and video building." />
   </component>
 </project>

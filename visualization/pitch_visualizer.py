@@ -13,6 +13,13 @@ class PitchVisualizer:
         self.width = width
         self.height = height
         self.track_history = {}
+        self.heatmap_colors = {
+
+            1: (255, 0, 0),  # Blue
+
+            2: (0, 0, 255)  # Red
+
+        }
 
     def create_pitch(self):
         pitch = np.zeros(
@@ -286,12 +293,13 @@ class PitchVisualizer:
             pitch,
             team_heatmaps
     ):
+
         for team, data in team_heatmaps.items():
             heatmap = data["heatmap"]
 
-            color = tuple(
-                int(c)
-                for c in data["team_color"]
+            color = self.heatmap_colors.get(
+                team,
+                (255, 255, 255)
             )
 
             heatmap = cv2.resize(
@@ -302,16 +310,18 @@ class PitchVisualizer:
 
             overlay = np.zeros_like(pitch)
             b, g, r = color
-            overlay[:, :, 0] = heatmap * b
-            overlay[:, :, 1] = heatmap * g
-            overlay[:, :, 2] = heatmap * r
+            strength = 255
+
+            overlay[:, :, 0] = heatmap * (b / 255.0) * strength
+            overlay[:, :, 1] = heatmap * (g / 255.0) * strength
+            overlay[:, :, 2] = heatmap * (r / 255.0) * strength
 
             #Add blend
             cv2.addWeighted(
                 overlay,
-                0.45,
+                0.70,
                 pitch,
-                0.55,
+                0.30,
                 0,
                 pitch
             )

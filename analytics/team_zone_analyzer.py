@@ -163,3 +163,41 @@ class TeamZoneAnalyzer:
             }
 
         return team_hulls
+
+    def calculate_overlay_team_hulls(self, frame_players):
+        team_positions = self.group_players_by_team(frame_players)
+
+        team_overlay_hulls = {}
+
+        for team, players in team_positions.items():
+
+            if len(players) < 3:
+                continue
+
+            points = []
+
+            for player in players:
+                bbox = player["bbox"]
+                center_x = (bbox[0] + bbox[2]) / 2
+                bottom_y = bbox[3]
+
+                points.append([
+                    center_x,
+                    bottom_y
+                ])
+
+            points = np.array(
+                points,
+                dtype=np.float32
+            )
+
+            hull = cv2.convexHull(points)
+
+            team_overlay_hulls[team] = {
+
+                "hull": hull,
+                "team_color": players[0]["team_color"]
+
+            }
+
+        return team_overlay_hulls

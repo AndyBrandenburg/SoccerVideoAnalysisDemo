@@ -71,7 +71,7 @@ class HeatmapAnalyzer:
             #blur for smoothing
             heatmap = cv2.GaussianBlur(
                 heatmap,
-                (3,3),
+                (31,31),
                 0
             )
 
@@ -92,7 +92,7 @@ class HeatmapAnalyzer:
         return team_heatmaps
 
     def calculate_frame_team_heatmap(self, frame_players):
-        
+
 
         for track_id, player in frame_players.items():
             team = player["team"]

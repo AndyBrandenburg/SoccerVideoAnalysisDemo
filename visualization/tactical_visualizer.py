@@ -2,12 +2,14 @@
 from visualization.pitch_visualizer import PitchVisualizer
 from analytics.team_zone_analyzer import TeamZoneAnalyzer
 from analytics.heatmaps import HeatmapAnalyzer
+from visualization.overlay_visualizer import OverlayVisualizer
 class TacticalVisualizer:
     def __init__(self):
         self.pitch_visualizer = PitchVisualizer()
 
         self.zone_analyzer = TeamZoneAnalyzer()
         self.heatmap_maker = HeatmapAnalyzer()
+        self.overlay_visualizer = OverlayVisualizer()
 
     def build_zone_video(self, tracks, video_frames):
         output_frames = []
@@ -132,5 +134,67 @@ class TacticalVisualizer:
             )
 
             output_frames.append(pitch)
+        return output_frames
+
+    ##-----OVERLAY HULL VIDEO BUILDER-----##
+    def build_overlay_hull_video(
+            self,
+            tracks,
+            video_frames
+    ):
+
+        output_frames = []
+
+        for frame_num, frame_players in enumerate(
+                tracks["players"]
+        ):
+            # Copy the original video frame
+            frame = video_frames[frame_num].copy()
+
+            # Calculate hulls for this frame
+            team_hulls = self.zone_analyzer.calculate_overlay_team_hulls(
+                frame_players
+            )
+
+            # Draw hulls onto the original frame
+            frame = self.overlay_visualizer.draw_team_hulls(
+                frame,
+                team_hulls
+            )
+
+            output_frames.append(frame)
+
+        return output_frames
+
+    def build_overlay_heatmap_video(
+            self,
+            tracks,
+            video_frames
+    ):
+
+        output_frames = []
+
+        for frame_num, frame_players in enumerate(
+                tracks["players"]
+        ):
+            frame = video_frames[frame_num].copy()
+
+            team_heatmaps = (
+                self.heatmap_maker.calculate_frame_team_heatmap(
+                    frame_players
+                )
+            )
+            frame = self.overlay_visualizer.draw_players(
+                frame,
+                frame_players
+            )
+
+            frame = self.overlay_visualizer.draw_team_heatmaps(
+                frame,
+                team_heatmaps
+            )
+
+            output_frames.append(frame)
+
         return output_frames
 

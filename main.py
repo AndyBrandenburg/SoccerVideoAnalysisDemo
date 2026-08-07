@@ -3,6 +3,7 @@ from trackers import Tracker
 import cv2
 import os
 import numpy as np
+import streamlit as st
 from team_assigner import TeamAssigner
 from sklearn.cluster import KMeans
 from player_ball_assigner import PlayerBallAssigner
@@ -56,10 +57,38 @@ def collect_player_colors(
 
     return player_colors
 
-def main():
+
+
+
+def main(
+        video_path,
+        output_folder = "output_videos",
+        options = None
+):
+    if options is None:
+        options = {
+
+            "pitch": True,
+
+            "heatmap": True,
+
+            "zones": True,
+
+            "hulls": True,
+
+            "overlay_heatmap": True,
+
+            "json": True,
+
+            "database": True
+
+        }
+    ###-----RESULTS DICT-----###
+    results = {}
+    ###-----RESULTS DICT END-----###
     print("STEP 1 - entering main")
     # Read video
-    video_path = 'Video_Input/Soccer_Test_Video.mp4'
+
 
     video_frames, fps = read_video(video_path)
     print("FPS:", fps)
@@ -79,7 +108,7 @@ def main():
     print("STEP 3 - tracker initialized")
 
     tracks = tracker.get_object_tracker(video_frames,
-                                        read_from_stub=False,
+                                        read_from_stub=True,
                                         stub_path= stub_path)
 
     print("Players in frame 0:", len(tracks["players"][0]))
@@ -130,79 +159,78 @@ def main():
         print("----------------")
 
 
+    if options["database"]:
+        #Implement SQL Lite database:
+        # Create database (SQL Lite)
+        sqlite_db = SQLiteManager()
+
+        # Create database (SQL Server)
+        sqlserver_db = SQLServerManager()
+        # Create SQLite tables
+        sqlite_db.create_tables()
+
+        # Create match in SQL Server
+        sqlserver_match_id = sqlserver_db.create_match(
+            video_name=video_path,
+            fps=fps,
+            width=1920,
+            height=1080
+        )
+
+        # Create match in SQLite
+        sqlite_match_id = sqlite_db.create_match(
+            video_name=video_path,
+            fps=fps,
+            width=1920,
+            height=1080
+        )
 
 
-    #Implement SQL Lite database:
-    # Create database (SQL Lite)
-    sqlite_db = SQLiteManager()
+        # Create tables
+        sqlite_db.create_tables()
 
-    # Create database (SQL Server)
-    sqlserver_db = SQLServerManager()
-    # Create SQLite tables
-    sqlite_db.create_tables()
+        #Insert Players
+        databases = [
+            (sqlite_db, sqlite_match_id),
+            (sqlserver_db, sqlserver_match_id)
+        ]
 
-    # Create match in SQL Server
-    sqlserver_match_id = sqlserver_db.create_match(
-        video_name=video_path,
-        fps=fps,
-        width=1920,
-        height=1080
-    )
+        for frame_num, player_dict in enumerate(tracks["players"]):
 
-    # Create match in SQLite
-    sqlite_match_id = sqlite_db.create_match(
-        video_name=video_path,
-        fps=fps,
-        width=1920,
-        height=1080
-    )
+            for track_id, player in player_dict.items():
 
+                for db, match_id in databases:
+                    db.insert_player(
 
-    # Create tables
-    sqlite_db.create_tables()
+                        frame_num,
+                        track_id,
+                        player["bbox"],
+                        match_id,
+                        player["pitch_x"],
+                        player["pitch_y"],
+                        player.get("team"),
+                        player.get("team_color"),
+                        player.get("has_ball", False)
 
-    #Insert Players
-    databases = [
-        (sqlite_db, sqlite_match_id),
-        (sqlserver_db, sqlserver_match_id)
-    ]
+                    )
 
-    for frame_num, player_dict in enumerate(tracks["players"]):
+        #Insert Ball
+        for frame_num, ball_dict in enumerate(tracks["ball"]):
 
-        for track_id, player in player_dict.items():
+            if 1 in ball_dict:
+                for db, match_id in databases:
+                    db.insert_ball(
 
-            for db, match_id in databases:
-                db.insert_player(
+                        frame_num,
+                        ball_dict[1]["bbox"],
+                        match_id,
+                        ball_dict[1]["pitch_x"],
+                        ball_dict[1]["pitch_y"]
 
-                    frame_num,
-                    track_id,
-                    player["bbox"],
-                    match_id,
-                    player["pitch_x"],
-                    player["pitch_y"],
-                    player.get("team"),
-                    player.get("team_color"),
-                    player.get("has_ball", False)
+                    )
 
-                )
-
-    #Insert Ball
-    for frame_num, ball_dict in enumerate(tracks["ball"]):
-
-        if 1 in ball_dict:
-            for db, match_id in databases:
-                db.insert_ball(
-
-                    frame_num,
-                    ball_dict[1]["bbox"],
-                    match_id,
-                    ball_dict[1]["pitch_x"],
-                    ball_dict[1]["pitch_y"]
-
-                )
-
-    sqlite_db.save()
-    sqlserver_db.save()
+        sqlite_db.save()
+        sqlserver_db.save()
 
 
 
@@ -400,13 +428,14 @@ def main():
 
     #JSON implementation
 
-    print("JSON TEST")
-    print(tracks["players"][0][1])
+    if options["json"]:
 
-    export_tracking_json(
-        tracks,
-        "JSON_data/tracking_output.json"
-    )
+        export_tracking_json(
+            tracks,
+            "JSON_data/tracking_output.json"
+        )
+        results["JSON"] = \
+            "JSON_data/tracking_output.json"
 
 
     # #Save cropped image of a player
@@ -459,16 +488,23 @@ def main():
     print("---BALL TRACKS---")
     print(tracks["ball"][0])
 
-    pitch_frames = tactical_visualizer.build_pitch_video(
-        tracks,
-        video_frames
-    )
+    if options["pitch"]:
 
-    save_video(
-        pitch_frames,
-        "output_videos/pitch_view_trails.avi",
-        fps
-    )
+        pitch_frames = tactical_visualizer.build_pitch_video(
+            tracks,
+            video_frames
+        )
+
+        save_video(
+            pitch_frames,
+            os.path.join(
+                output_folder,
+                "pitch_view.mp4"
+            ),
+            fps
+        )
+        results["Pitch View"] = \
+            "pitch_view.mp4"
 
     #Output for average positions:
     average_pitch = pitch_visualizer.create_pitch()
@@ -514,20 +550,25 @@ def main():
     }
 
     ###-----ZONE VIDEO DRAWING LOOP-----###
+    if options["zones"]:
+        zone_frames = tactical_visualizer.build_zone_video(
 
-    zone_frames = tactical_visualizer.build_zone_video(
+            tracks,
 
-        tracks,
+            video_frames
 
-        video_frames
-
-    )
-    #Save Video
-    save_video(
-        zone_frames,
-        "output_videos/team_zones_video.avi",
-        fps
-    )
+        )
+        #Save Video
+        save_video(
+            zone_frames,
+            os.path.join(
+                output_folder,
+                "team_zones_video.mp4"
+            ),
+            fps
+        )
+        results["Zone View"] = \
+            "team_zones_video.mp4"
     ####------END OF ZONE VIDEO BLOCK------####
 
     ####------ZONE IMAGE DRAWING------####
@@ -550,16 +591,42 @@ def main():
     )
     #####------END OF ZONE IMAGE DRAWING BLOCK------####
 
+    #####------ZONE HULL OVERLAY VIDEO BLOCK------####
+    if options["hulls"]:
+        overlay_frames = tactical_visualizer.build_overlay_hull_video(
+            tracks,
+            video_frames
+        )
+
+        save_video(
+            overlay_frames,
+            os.path.join(
+                output_folder,
+                "overlay_hulls.mp4"
+            ),
+            fps
+        )
+        results["Hull Overlay"] = \
+            "overlay_hulls.mp4"
+    #####------END OF ZONE HULL OVERLAY VIDEO BLOCK------####
+
     #####------HEATMAP VIDEO BLOCK-----#####
-    heatmap_frames = tactical_visualizer.build_heatmap_video(
-        tracks,
-        video_frames
-    )
-    save_video(
-        heatmap_frames,
-        "output_videos/team_heatmap_video.avi",
-        fps
-    )
+    if options["heatmap"]:
+
+        heatmap_frames = tactical_visualizer.build_heatmap_video(
+            tracks,
+            video_frames
+        )
+        save_video(
+            heatmap_frames,
+            os.path.join(
+                output_folder,
+                "team_heatmap_video.mp4"
+            ),
+            fps
+        )
+        results["Team Heatmaps"] = \
+            "team_heatmap_video.mp4"
 
     ########-----HEATMAPS IMAGE BLOCK-----#########
     heatmap_analyzer = HeatmapAnalyzer()
@@ -584,6 +651,26 @@ def main():
     )
     ######-----HEATMAPS IMAGE BLOCK END-----######
 
+    ######-----HEATMAP OVERLAY VIDEO BLOCK-----######
+    if options["overlay_heatmap"]:
+
+        overlay_heatmap_frames = tactical_visualizer.build_overlay_heatmap_video(
+            tracks,
+            video_frames
+        )
+
+        save_video(
+            overlay_heatmap_frames,
+            os.path.join(
+                output_folder,
+                "overlay_heatmaps.mp4"
+            ),
+            fps
+        )
+        results["Heatmap Overlay"] = \
+            "overlay_heatmaps.mp4"
+    ######-----HEATMAP OVERLAY VIDEO BLOCK END-----######
+
     #STATISTICS BUILDER CALL
     statistics_builder = PlayerStatisticsBuilder()
 
@@ -593,21 +680,26 @@ def main():
         )
 
     #Implement statistics and analysis into the database
-    for track_id, stats in match_analysis["player_statistics"].items():
-        sqlite_db.insert_player_statistics(
-            sqlite_match_id,
-            stats
-        )
+    if options["database"]:
+        for track_id, stats in match_analysis["player_statistics"].items():
+            sqlite_db.insert_player_statistics(
+                sqlite_match_id,
+                stats
+            )
 
-        sqlserver_db.insert_player_statistics(
-            sqlserver_match_id,
-            stats
-        )
+            sqlserver_db.insert_player_statistics(
+                sqlserver_match_id,
+                stats
+            )
 
-    sqlite_db.save()
-    sqlserver_db.save()
-    sqlite_db.close()
-    sqlserver_db.close()
+        sqlite_db.save()
+        sqlserver_db.save()
+        sqlite_db.close()
+        sqlserver_db.close()
+
+        results["SQLite"] = "sports_db/soccer_tracking.db"
+        results["SQL Server"] = "Updated"
+
 
 
 
@@ -620,10 +712,20 @@ def main():
     #Save Video
     save_video(
         output_video_frames,
-        'output_videos/output_video_test_homography.avi',
+        os.path.join(
+            output_folder,
+            "output_video_test_homography.avi"
+        ),
         fps
     )
+    print(results)
+    return results
 
 
-if __name__ == '__main__':
-    main()
+if __name__ == "__main__":
+
+    main(
+
+        "Video_Input/Soccer_Test_Video.mp4"
+
+    )
