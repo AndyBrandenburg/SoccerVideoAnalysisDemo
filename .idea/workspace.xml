@@ -11,50 +11,17 @@
       <change afterPath="$PROJECT_DIR$/Video_Input/Soccer_Test_Video6.mp4" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/Video_Input/Soccer_Video1.MP4" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/Video_Input/Soccer_Video2.MP4" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/build/analytics.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/build/analytics/distance_analyzer.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/build/analytics/heatmaps.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/build/analytics/history_builder.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/build/analytics/player_histories.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/build/analytics/player_statistics_builder.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/build/analytics/positioning.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/build/analytics/possession_analyzer.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/build/analytics/team_zone_analyzer.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/build/analytics/touch_analyzer.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/build/camera_motion.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/build/camera_motion/camera_motion.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/build/database.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/build/database/sql_lite.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/build/database/sql_server.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/build/exporters.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/build/exporters/json_exporter.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/build/homography.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/build/homography/homography.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/build/index.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/build/main.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/build/player_ball_assigner.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/build/player_ball_assigner/player_ball_assigner.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/build/search.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/build/streamlit_app.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/build/team_assigner.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/build/team_assigner/team_assigner.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/build/trackers.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/build/trackers/tracker.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/build/utils.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/build/utils/bbox_utils.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/build/utils/tracking_data.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/build/utils/video_utils.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/build/visualization.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/build/visualization/overlay_visualizer.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/build/visualization/pitch_visualizer.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/build/visualization/tactical_visualizer.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/architecture.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/guide.md" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/pipeline.py" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/runs/detect/predict-2/Soccer_Test_Video.avi" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/runs/detect/predict-3/Soccer_Test_Video.avi" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/runs/detect/predict/Soccer_Test_Video.avi" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/runs/detect/track/Soccer_Test_Video.avi" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/docs/api_reference.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/api_reference.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/index.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/index.md" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -244,7 +211,15 @@
       <option name="project" value="LOCAL" />
       <updated>1786375458894</updated>
     </task>
-    <option name="localTasksCounter" value="14" />
+    <task id="LOCAL-00014" summary="More documentation for classes and methods">
+      <option name="closed" value="true" />
+      <created>1786381164703</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1786381164703</updated>
+    </task>
+    <option name="localTasksCounter" value="15" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

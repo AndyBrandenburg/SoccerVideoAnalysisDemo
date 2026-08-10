@@ -6,7 +6,7 @@ Piedra Alta Sistemas
 
 # About This Project:
 
-This sports analysis platform takes a short soccer video clip and uses Ultralytics YOLO and ByteTrack to detect objects like players, referees, and the ball. It provides analysis features like convex hulls (Polygons showing team shapes and formations), heatmaps, trajectories, and more analytics both on a 2D pitch view and a overlay on the original video. It also collects and exports JSON data and stores information in SQL Lite and SQL Server databases.
+This sports analysis platform takes a short soccer video clip and uses Ultralytics YOLO and ByteTrack to detect objects like players, referees, and the ball. It provides analysis features like convex hulls (Polygons showing team shapes and formations), heatmaps, trajectories, and more analytics both on a 2D pitch view and an overlay on the original video. It also collects and exports JSON data and stores information in SQL Lite and SQL Server databases.
 
 This platform was built to provide professional analysis from soccer match clips and answer questions that many coaches and soccer clubs often ask like formations, player histories, player trajectories, ball control, team zones, and more which can be used to provide analysis and answers to professional questions.
 
