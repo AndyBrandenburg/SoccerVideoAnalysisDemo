@@ -714,7 +714,7 @@ def main(
         output_video_frames,
         os.path.join(
             output_folder,
-            "output_video_test_homography.avi"
+            "output_video_Soccer.avi"
         ),
         fps
     )

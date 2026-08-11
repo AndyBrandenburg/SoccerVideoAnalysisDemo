@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="7c84d3b5-263e-4db9-aa1f-cc7f16c05e1b" name="Changes" comment="More documentation for classes and methods">
+    <list default="true" id="7c84d3b5-263e-4db9-aa1f-cc7f16c05e1b" name="Changes" comment="Added more documentation like the guide, index, and architecture sections.">
       <change afterPath="$PROJECT_DIR$/Training/World_Cup_History_API.ipynb" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/Video_Input/Basketball_Test_Video.mp4" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/Video_Input/Soccer_Test_Video2.mp4" afterDir="false" />
@@ -11,17 +11,13 @@
       <change afterPath="$PROJECT_DIR$/Video_Input/Soccer_Test_Video6.mp4" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/Video_Input/Soccer_Video1.MP4" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/Video_Input/Soccer_Video2.MP4" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/architecture.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docs/guide.md" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/pipeline.py" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/runs/detect/predict-2/Soccer_Test_Video.avi" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/runs/detect/predict-3/Soccer_Test_Video.avi" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/runs/detect/predict/Soccer_Test_Video.avi" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/runs/detect/track/Soccer_Test_Video.avi" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/api_reference.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/api_reference.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/index.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/index.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -219,7 +215,15 @@
       <option name="project" value="LOCAL" />
       <updated>1786381164703</updated>
     </task>
-    <option name="localTasksCounter" value="15" />
+    <task id="LOCAL-00015" summary="Added more documentation like the guide, index, and architecture sections.">
+      <option name="closed" value="true" />
+      <created>1786389625624</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1786389625624</updated>
+    </task>
+    <option name="localTasksCounter" value="16" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -259,6 +263,7 @@
     <MESSAGE value="Added more implementation for databases, added more analysis features like hulls, organized some of the architecture in the main and video building." />
     <MESSAGE value="Added overlays, streamlit implementation, and start of documentation" />
     <MESSAGE value="More documentation for classes and methods" />
-    <option name="LAST_COMMIT_MESSAGE" value="More documentation for classes and methods" />
+    <MESSAGE value="Added more documentation like the guide, index, and architecture sections." />
+    <option name="LAST_COMMIT_MESSAGE" value="Added more documentation like the guide, index, and architecture sections." />
   </component>
 </project>
